@@ -1,2 +1,2 @@
-# dev_zig
-Desarrollos en zig
+# libc
+Desarrollos de librerias en c
