@@ -14,6 +14,9 @@ void local_rand(uint32_t *r){
 	*r = rand();
 }
 
+uint32_t local_time(){
+	return time(NULL);
+}
 
 uint8_t local_initialize(uint8_t dev){
 	if(fp == NULL)
@@ -67,6 +70,7 @@ int main(){
 	_ciphdev cd;
 	srand(time(NULL));
 	ciphdev_attach_random(&cd, &local_rand);
+	ciphdev_attach_time(&cd, &local_time);
 	ciphdev_attach_debug(&cd, &local_debug);
 	ciphdev_attach_dev_read(&cd, &local_read);
 	ciphdev_attach_dev_write(&cd, &local_write);
@@ -79,6 +83,15 @@ int main(){
 	printf("Initialize ecod: %d\n", ciphdev_initialize(&cd, 0, "laguagua", 8));
 	printf("add key ecod: %d\n", ciphdev_addkey(&cd, "watafucke", 9, 3));
 	//printf("delete key ecod: %d\n", ciphdev_deletekey(&cd, 0));
+
+
+  cd.datetime = 1;
+  cd.version = 31;
+  cd.user_data[0] = 32;
+  cd.user_data[1] = 296;
+  cd.user_data[2] = 228;
+	printf("rewrite header ecod: %d\n", ciphdev_rewrite_header(&cd));
+
 	printf("Initialize ecod: %d\n", ciphdev_initialize(&cd, 0, "watafucke", 9));
 
 	FILE *fpread = fopen("/home/psilva/read.txt" ,"r");

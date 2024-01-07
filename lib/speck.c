@@ -5,7 +5,7 @@
  * Initializes a spec context
  * given a 128-bit key, extend it for 27 rounds
  */
-void speck_init(_speck *s, uint32_t K[4]){
+void speck_init(_speck *s, const uint32_t K[4]){
    uint32_t i, a, b;
 
    a = K[0];

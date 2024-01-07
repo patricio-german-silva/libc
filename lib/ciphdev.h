@@ -13,8 +13,12 @@
  * EL header de control ocupa el sector 0 de 512 bytes, cada slot con las Claves
  * cifradas se ubican consucutivamente, ocupando 32 bytes cada par de claves
  * osea [0..319].
- * La ubicación [320..323] es el tamaño del bloque en sectores, se cifra con la key 1.
- * La ubicación [323..492] se randomiza y se cifra con la key 1.
+ * El resto del sector se cifra con la key 1, siendo:
+ * La ubicación [320..323] es el tamaño del bloque en sectores
+ * La ubicación [324..327] es la version de ciphdev (_CIPHDEV_VERSION)
+ * La ubicación [328..331] es la fecha de creacion del bloque
+ * La ubicación [332..343] son 12 bytes arbitrarios definibles por el usuario
+ * La ubicación [344..492] se randomiza y se cifra con la key 1.
  * Los ultimos 16 bytes corresponden al hash md5 de esos 176 bytes cifrados
  * Es necesario que esto se cumpla para poder inicializar un bloque.
  *
@@ -73,6 +77,7 @@ typedef uint8_t (*ciphdev_dev_read_def)(uint8_t dev, uint8_t *buff, uint32_t sec
 typedef uint8_t (*ciphdev_dev_write_def)(uint8_t dev, const uint8_t *buff, uint32_t sector, uint32_t count);
 typedef uint8_t (*ciphdev_dev_ioctl_def)(uint8_t dev, uint8_t cmd, uint32_t *buff);
 typedef void (*ciphdev_random_def)(uint32_t *buff);
+typedef uint32_t (*ciphdev_time_def)();
 typedef void (*ciphdev_debug_def)(uint8_t level, const char *msg, const uint8_t *arg, uint8_t argl);
 
 /* Estructura de datos que mantiene un bloque cifrado */
@@ -127,6 +132,7 @@ typedef struct{
 	ciphdev_dev_write_def func_dev_write;
 	ciphdev_dev_ioctl_def func_dev_ioctl;
 	ciphdev_random_def func_random;
+	ciphdev_time_def func_time;
 	ciphdev_debug_def func_debug;
 } _ciphdev;
 
@@ -181,6 +187,16 @@ uint8_t ciphdev_read (_ciphdev *cd, uint8_t* buff, uint32_t sector, uint32_t cou
  * @return 3 si hubo error de escritura en el device*/
 uint8_t ciphdev_write (_ciphdev *cd, const uint8_t *buff, uint32_t sector, uint32_t count);
 
+/* Reescribe el header con la informacion en el struc _ciphdev cd
+ * para block_size, version, datetime y user_data
+ * An smaller block_size value may corrupt the data.
+ * block signature will be changed only if something changes. This procedure
+ * does not require random or time function to be linked.
+ * @return 0 si la escritura fue correcta
+ * @return 1 si el bloque no está inicializado
+ * @return 2 si hubo error de escritura en el device*/
+uint8_t ciphdev_rewrite_header (_ciphdev *cd);
+
 /* ioctl, retorna valor segun el comando cmd */
 uint8_t ciphdev_ioctl (_ciphdev *cd, uint8_t cmd, uint32_t *buff);
 
@@ -191,6 +207,7 @@ void ciphdev_attach_dev_read(_ciphdev *cd, ciphdev_dev_read_def f);
 void ciphdev_attach_dev_write(_ciphdev *cd, ciphdev_dev_write_def f);
 void ciphdev_attach_dev_ioctl(_ciphdev *cd, ciphdev_dev_ioctl_def f);
 void ciphdev_attach_random(_ciphdev *cd, ciphdev_random_def f);
+void ciphdev_attach_time(_ciphdev *cd, ciphdev_time_def f);
 void ciphdev_attach_debug(_ciphdev *cd, ciphdev_debug_def f);
 
 #endif /*  CIPHDEV_H  */

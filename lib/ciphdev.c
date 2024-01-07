@@ -79,12 +79,8 @@ uint8_t ciphdev_create (_ciphdev *cd, uint8_t dev, uint32_t bs, const char *user
 		md5_update(&md5ctx, &(cd->buff_u8[504]), 8);
 
     // Agrego currtime y user_data[0]
-    #ifdef _TIME_H
-    cd->buff_u32[126] = time(NULL);
+    cd->buff_u32[126] = cd->func_time();
 		cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev CREATE: DATETIME\0", (uint8_t*)&cd->buff_u32[126], 4);
-    #else
-		cd->buff_u32[126] = 0;
-    #endif
 		cd->buff_u32[127] = cd->user_data[0];
 		speck_encrypt(&sp, &(cd->buff_u32[126]), &(cd->buff_u32[82]));
 		md5_update(&md5ctx, &(cd->buff_u8[504]), 8);
@@ -412,6 +408,86 @@ uint8_t ciphdev_write (_ciphdev *cd, const uint8_t *buff, uint32_t sector, uint3
 }
 
 
+/* Reescribe el header con la informacion en el struc _ciphdev cd
+ * para version, datetime y user_data
+ * @return 0 si la escritura fue correcta
+ * @return 1 si el bloque no está inicializado
+ * @return 2 si hubo error de escritura en el device*/
+uint8_t ciphdev_rewrite_header (_ciphdev *cd){
+	if(cd->status == _CIPHDEV_STATUS_INIT){
+
+		cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev REWRITE HEADER\0", 0, 0);
+
+		if(cd->func_dev_read(cd->dev, cd->buff_u8, 0, 1) != 0){
+			cd->func_debug(_CIPHDEV_LOG_LEVEL_ERROR, "Ciphdev REWRITE HEADER: READ_ERROR, VOLUME sector 0\0", 0, 0);
+			cd->status = _CIPHDEV_STATUS_READ_ERROR;
+			return 3;
+		}
+
+    // prepare cipher
+		_speck sp;
+		_md5_context md5ctx;
+		md5_init(&md5ctx);
+
+		// Agrego tamaño y version
+		speck_init(&sp, cd->speck_key1);
+		md5_init(&md5ctx);
+		cd->buff_u32[126] = cd->block_size;	// 4 bytes for size
+		cd->buff_u32[127] = cd->version;	// 4 bytes for version
+		cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev REWRITE HEADER: BLOCK SIZE (sectors)\0", (uint8_t*)&cd->buff_u32[126], 4);
+		cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev REWRITE HEADER: VERSION\0", (uint8_t*)&cd->buff_u32[127], 4);
+		speck_encrypt(&sp, &(cd->buff_u32[126]), &(cd->buff_u32[80]));
+		md5_update(&md5ctx, &(cd->buff_u8[504]), 8);
+
+    // Agrego datetime y user_data[0]
+    cd->buff_u32[126] = cd->datetime;
+		cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev REWRITE HEADER: DATETIME\0", (uint8_t*)&cd->buff_u32[126], 4);
+		cd->buff_u32[127] = cd->user_data[0];
+		speck_encrypt(&sp, &(cd->buff_u32[126]), &(cd->buff_u32[82]));
+		md5_update(&md5ctx, &(cd->buff_u8[504]), 8);
+
+    // Agrego user_data[1,2]
+		cd->buff_u32[126] = cd->user_data[1];
+		cd->buff_u32[127] = cd->user_data[2];
+		speck_encrypt(&sp, &(cd->buff_u32[126]), &(cd->buff_u32[84]));
+		md5_update(&md5ctx, &(cd->buff_u8[504]), 8);
+		cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev REWRITE HEADER: USER DATA\0", &cd->u8user_data[0], 12);
+
+    // randomizo 152 bytes y los cifro
+		for(uint8_t i = 86; i < 124; i+=2){
+			cd->func_random(&(cd->buff_u32[126]));
+			cd->func_random(&(cd->buff_u32[127]));
+			speck_encrypt(&sp, &(cd->buff_u32[126]), &(cd->buff_u32[i]));
+			md5_update(&md5ctx, &(cd->buff_u8[504]), 8);
+		}
+		md5_finalize(&md5ctx);  // hash on md5ctx.digest
+
+		// Los ultimos 4 bytes son el md5 de la randomización sin cifrar
+		for(uint8_t i = 0; i < 16; i++)
+			cd->buff_u8[i+496] = md5ctx.digest[i];
+		cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev REWRITE HEADER: new pad signature\0", &(cd->buff_u8[496]), 16);
+
+		// write to device inmediatly
+		if(cd->func_dev_write(cd->dev, cd->buff_u8, 0, 1) != 0){
+			cd->func_debug(_CIPHDEV_LOG_LEVEL_ERROR, "Ciphdev REWRITE HEADER WRITE_ERROR sector 0 device \0", &(cd->dev), 1);
+			return 3;
+		}
+
+		if(cd->func_dev_ioctl(cd->dev, _CIPHDEV_CTRL_SYNC, cd->buff_u32) != 0){
+			cd->func_debug(_CIPHDEV_LOG_LEVEL_ERROR, "Ciphdev REWRITE HEADER: SYNC CALL ERROR, device\0", &(cd->dev), 1);
+			return 4;
+		}
+		cd->func_debug(_CIPHDEV_LOG_LEVEL_INFO, "Ciphdev REWRITE HEADER SUCCESS on device\0", &(cd->dev), 1);
+
+		return 0;
+
+	}
+	cd->func_debug(_CIPHDEV_LOG_LEVEL_WARN, "Ciphdev REWRITE HEADER: BLOCK not initialized\0", 0, 0);
+	return 1;
+}
+
+
+
 /* ioctl, retorna valor segun el comando cmd */
 uint8_t ciphdev_ioctl (_ciphdev *cd, uint8_t cmd, uint32_t *buff){
   switch(cmd){
@@ -451,6 +527,10 @@ void ciphdev_attach_dev_ioctl(_ciphdev *cd, ciphdev_dev_ioctl_def f){
 
 void ciphdev_attach_random(_ciphdev *cd, ciphdev_random_def f){
 	cd->func_random = f;
+}
+
+void ciphdev_attach_time(_ciphdev *cd, ciphdev_time_def f){
+	cd->func_time = f;
 }
 
 void ciphdev_attach_debug(_ciphdev *cd, ciphdev_debug_def f){
