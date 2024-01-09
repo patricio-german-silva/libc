@@ -42,7 +42,6 @@
 #include "md5.h"
 #include "speck.h"
 #include "stdint.h"
-#include <time.h>
 
 #define _CIPHDEV_VERSION 4
 #define _CIPHDEV_SECTOR_SIZE 512
