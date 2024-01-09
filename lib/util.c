@@ -526,6 +526,22 @@ uint16_t _cut(const char *str, char separator, uint8_t field, char *res, uint16_
     return size;
 }
 
+
+
+/*
+ * Compara dos cadenas de caracteres finalizadas en \0
+ * @param *str1 es la cadena 1, terminada en \0
+ * @param *str2 es la cadena 2, terminada en \0
+ * @param max es la longitud maxima que se va a comparar
+ * @result retorna 0 si las cadenas son iguales, 1 si son difeentes, 2 si se alcanzó max
+ */
+uint8_t _strcmp(const char *str1, const char *str2, uint32_t max){
+    while (*str1 == *str2++){
+        if (*str1++ == 0) return 0;
+        if (max-- == 0) return 2;
+    }
+    return 1;
+}
+
 #endif	// _UTIL_USE_STRING_UTILITIES
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
