@@ -56,7 +56,7 @@ static void _md5_step(uint32_t *buffer, uint32_t *input);
 /*
  * Rotates a 32-bit word left by n bits
  */
-uint32_t rotateLeft(uint32_t x, uint32_t n){
+static uint32_t rotateLeft(uint32_t x, uint32_t n){
 	return (x << n) | (x >> (32 - n));
 }
 
