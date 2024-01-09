@@ -415,8 +415,27 @@ uint16_t _cut(const char *str, char separator, uint8_t field, char *res, uint16_
  */
 uint8_t _strcmp(const char *str1, const char *str2, uint32_t max){
 
-#endif
-//--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/*
+ * Convierte a mayusculas una cadena de caracteres terminada en \0
+ * @param strin es la cadena a convertir
+ * @param strout es la cadena convertida, puede apuntar a la misma cadena que strin
+ * @param max es la cantidad de caracteres maximas a convertir, debe ser mayor a 0
+ * Notece que strout debe poder almacenar max+1 caracteres para poder finalizar
+ * la cadena de salida con \0
+ * @result 0 si la cadena se convirtió sin problemas, 1 si se alcanzo el valor max
+ */
+uint8_t _touppercase(const char *strin, char *strout, uint32_t max);
+
+/*
+ * Convierte a minusculas una cadena de caracteres terminada en \0
+ * @param strin es la cadena a convertir
+ * @param strout es la cadena convertida, puede apuntar a la misma cadena que strin
+ * @param max es la cantidad de caracteres maximas a convertir, debe ser mayor a 0
+ * Notece que strout debe poder almacenar max+1 caracteres para poder finalizar
+ * la cadena de salida con \0
+ * @result 0 si la cadena se convirtió sin problemas, 1 si se alcanzo el valor max
+ */
+uint8_t _tolowercase(const char *strin, char *strout, uint32_t max);
 
 
 #endif /* INC_UTIL_H_ */

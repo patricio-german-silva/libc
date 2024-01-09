@@ -543,5 +543,55 @@ uint8_t _strcmp(const char *str1, const char *str2, uint32_t max){
     return 1;
 }
 
+/*
+ * Convierte a mayusculas una cadena de caracteres terminada en \0
+ * @param strin es la cadena a convertir
+ * @param strout es la cadena convertida
+ * @param max es la cantidad de caracteres maximas a convertir
+ * Notece que strout debe poder almacenar max+1 caracteres para poder finalizar
+ * la cadena de salida con \0
+ * @result 0 si la cadena se convirtió sin problemas, 1 si se alcanzo el valor max
+ */
+uint8_t _touppercase(const char *strin, char *strout, uint32_t max){
+  const uint8_t d = ('A'-'a');
+  while(*strin != 0){
+    if(*strin >= 'a' && *strin <= 'z')
+      *strout++ = *strin + d;
+    else
+      *strout++ = *strin;
+    if (--max == 0){
+      *strout = 0;
+      return 1;
+    }
+    strin++;
+  }
+  return 0;
+}
+
+/*
+ * Convierte a minusculas una cadena de caracteres terminada en \0
+ * @param strin es la cadena a convertir
+ * @param strout es la cadena convertida
+ * @param max es la cantidad de caracteres maximas a convertir
+ * Notece que strout debe poder almacenar max+1 caracteres para poder finalizar
+ * la cadena de salida con \0
+ * @result 0 si la cadena se convirtió sin problemas, 1 si se alcanzo el valor max
+ */
+uint8_t _tolowercase(const char *strin, char *strout, uint32_t max){
+  const uint8_t d = ('A'-'a');
+  while(*strin != 0){
+    if(*strin >= 'A' && *strin <= 'Z')
+      *strout++ = *strin - d;
+    else
+      *strout++ = *strin;
+    if (--max == 0){
+      *strout = 0;
+      return 1;
+    }
+    strin++;
+  }
+  return 0;
+}
+
 #endif	// _UTIL_USE_STRING_UTILITIES
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
