@@ -12,20 +12,27 @@ static uint8_t ciphdev_header_verify(_ciphdev *cd);
 
 /* Crea un bloque cifrado cd en el dispositvo dev de un tamaño bs sectores
  * utilizando la frase de cifrado de usuario user_key de longitud len que se
- * almacenará en el slot 0
+ * almacenará en el slot index
  * @return 0 si el bloque se creó correctamente
- * @return 1 si el device no se pudo inicializar
- * @return 2 si el device es mas pequeño que bs
- * @return 3 si fallo la escritura en el device
- * @return 4 si fallo la llamada ioctl a SYNC
+ * @return 1 si el indice de slot no es valido
+ * @return 2 si el device no se pudo inicializar
+ * @return 3 si el device es mas pequeño que bs
+ * @return 4 si fallo la escritura en el device
+ * @return 5 si fallo la llamada ioctl a SYNC
  */
-uint8_t ciphdev_create (_ciphdev *cd, uint8_t dev, uint32_t bs, const char *user_key, uint8_t len){
+uint8_t ciphdev_create (_ciphdev *cd, uint8_t dev, uint32_t bs, const char *user_key, uint8_t len, uint8_t index){
 	cd->func_debug(_CIPHDEV_LOG_LEVEL_INFO, "Ciphdev CREATE device\0", 0, &dev, 1);
+
+  // El slot indicado no es válido
+	if(index > 9){
+		cd->func_debug(_CIPHDEV_LOG_LEVEL_INFO, "Ciphdev ADD_KEY: Slot index out of bonds. index\0", 0, &index , 1);
+		return 1;
+	}
 
 	// Inicializo el device
 	if(cd->func_dev_initialize(cd->dev) != 0){
 		cd->func_debug(_CIPHDEV_LOG_LEVEL_ERROR, "Ciphdev CREATE IOERROR device\0", 0, &dev, 1);
-		return 1;
+		return 2;
 	}
 
 	//check size
@@ -56,17 +63,17 @@ uint8_t ciphdev_create (_ciphdev *cd, uint8_t dev, uint32_t bs, const char *user
 		md5_update(&md5ctx, (uint8_t*)user_key, len);
 		md5_finalize(&md5ctx);  // hash on md5ctx.digest
 
-		// encrypt keys
-		_speck sp;
-		speck_init(&sp, (uint32_t*)md5ctx.digest);
-		speck_encrypt(&sp, cd->speck_key1, cd->buff_u32);
-		speck_encrypt(&sp, &(cd->speck_key1[2]), &(cd->buff_u32[2]));
-		speck_encrypt(&sp, cd->speck_key2, &(cd->buff_u32[4]));
-		speck_encrypt(&sp, &(cd->speck_key2[2]), &(cd->buff_u32[6]));
-
 		// randomize unused slots
 		for(uint8_t i = 8; i < 80; i++)
 			cd->func_random(&(cd->buff_u32[i]));
+
+		// encrypt and store keys
+		_speck sp;
+		speck_init(&sp, (uint32_t*)md5ctx.digest);
+		speck_encrypt(&sp, cd->speck_key1, &(cd->buff_u32[(index*8)]));
+		speck_encrypt(&sp, &(cd->speck_key1[2]), &(cd->buff_u32[(index*8)+2]));
+		speck_encrypt(&sp, cd->speck_key2, &(cd->buff_u32[(index*8)+4]));
+		speck_encrypt(&sp, &(cd->speck_key2[2]), &(cd->buff_u32[(index*8)+6]));
 
 		// Agrego tamaño y version
 		speck_init(&sp, cd->speck_key1);
@@ -120,21 +127,21 @@ uint8_t ciphdev_create (_ciphdev *cd, uint8_t dev, uint32_t bs, const char *user
 				cd->func_random(&(cd->buff_u32[j]));
 			if(cd->func_dev_write(cd->dev, cd->buff_u8, i, 1) != 0){
 				cd->func_debug(_CIPHDEV_LOG_LEVEL_ERROR, "Ciphdev CREATE WRITE_ERROR sector\0", 0, (uint8_t*)&bs, 1);
-				return 3;
+				return 4;
 			}
 		}
 		#endif
 
 		if(cd->func_dev_ioctl(cd->dev, _CIPHDEV_CTRL_SYNC, cd->buff_u32) != 0){
 			cd->func_debug(_CIPHDEV_LOG_LEVEL_ERROR, "Ciphdev CREATE: SYNC CALL ERROR, device\0", 0, &dev, 1);
-			return 4;
+			return 5;
 		}
 		cd->func_debug(_CIPHDEV_LOG_LEVEL_INFO, "Ciphdev CREATE SUCCESS on device\0", 0, &dev, 1);
 
 		return 0;
 	}
 	cd->func_debug(_CIPHDEV_LOG_LEVEL_WARN, "Ciphdev CREATE No space left on device \0", 0, &dev, 1);
-	return 2;
+	return 3;
 }
 
 /* Agrega/sobreescribe una clave al bloque cifrado cd previamente inizializado

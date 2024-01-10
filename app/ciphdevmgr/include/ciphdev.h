@@ -135,14 +135,15 @@ typedef struct{
 
 /* Crea un bloque cifrado cd en el dispositvo dev de un tamaño bs sectores
  * utilizando la frase de cifrado de usuario user_key de longitud len que se
- * almacenará en el slot 0
+ * almacenará en el slot index
  * @return 0 si el bloque se creó correctamente
- * @return 1 si el device no se pudo inicializar
- * @return 2 si el device es mas pequeño que bs
- * @return 3 si fallo la escritura en el device
- * @return 4 si fallo la llamada ioctl a SYNC
+ * @return 1 si el indice de slot no es valido
+ * @return 2 si el device no se pudo inicializar
+ * @return 3 si el device es mas pequeño que bs
+ * @return 4 si fallo la escritura en el device
+ * @return 5 si fallo la llamada ioctl a SYNC
  */
-uint8_t ciphdev_create (_ciphdev *cd, uint8_t dev, uint32_t bs, const char *user_key, uint8_t len);
+uint8_t ciphdev_create (_ciphdev *cd, uint8_t dev, uint32_t bs, const char *user_key, uint8_t len, uint8_t index);
 
 /* Agrega/sobreescribe una clave al bloque cifrado cd previamente inizializado
  * utilizando la frase de cifrado de usuario user_key de longitud len
