@@ -76,8 +76,7 @@ typedef uint8_t (*ciphdev_dev_read_def)(uint8_t dev, uint8_t *buff, uint32_t sec
 typedef uint8_t (*ciphdev_dev_write_def)(uint8_t dev, const uint8_t *buff, uint32_t sector, uint32_t count);
 typedef uint8_t (*ciphdev_dev_ioctl_def)(uint8_t dev, uint8_t cmd, uint32_t *buff);
 typedef void (*ciphdev_random_def)(uint32_t *buff);
-typedef uint32_t (*ciphdev_time_def)();
-typedef void (*ciphdev_debug_def)(uint8_t level, const char *msg, const uint8_t *arg, uint8_t argl);
+typedef void (*ciphdev_debug_def)(uint8_t level, const char *msg, const char *charg, const uint8_t *arg, uint8_t argl);
 
 /* Estructura de datos que mantiene un bloque cifrado */
 typedef struct{
@@ -131,7 +130,6 @@ typedef struct{
 	ciphdev_dev_write_def func_dev_write;
 	ciphdev_dev_ioctl_def func_dev_ioctl;
 	ciphdev_random_def func_random;
-	ciphdev_time_def func_time;
 	ciphdev_debug_def func_debug;
 } _ciphdev;
 
@@ -206,7 +204,6 @@ void ciphdev_attach_dev_read(_ciphdev *cd, ciphdev_dev_read_def f);
 void ciphdev_attach_dev_write(_ciphdev *cd, ciphdev_dev_write_def f);
 void ciphdev_attach_dev_ioctl(_ciphdev *cd, ciphdev_dev_ioctl_def f);
 void ciphdev_attach_random(_ciphdev *cd, ciphdev_random_def f);
-void ciphdev_attach_time(_ciphdev *cd, ciphdev_time_def f);
 void ciphdev_attach_debug(_ciphdev *cd, ciphdev_debug_def f);
 
 #endif /*  CIPHDEV_H  */
