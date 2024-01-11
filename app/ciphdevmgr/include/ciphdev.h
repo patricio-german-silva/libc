@@ -78,6 +78,10 @@ typedef uint8_t (*ciphdev_dev_ioctl_def)(uint8_t dev, uint8_t cmd, uint32_t *buf
 typedef void (*ciphdev_random_def)(uint32_t *buff);
 typedef void (*ciphdev_debug_def)(uint8_t level, const char *msg, const char *charg, const uint8_t *arg, uint8_t argl);
 
+
+// Device status by name
+static const char device_status[][13] = {"NOINIT\0", "INIT\0", "KEYERROR\0", "IOERROR\0", "READ_ERROR\0", "WRITE_ERROR\0", "HEADER_ERROR\0"};
+
 /* Estructura de datos que mantiene un bloque cifrado */
 typedef struct{
 	// Identificador del dispositivo

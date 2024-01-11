@@ -22,6 +22,7 @@ static uint8_t ciphdev_header_verify(_ciphdev *cd);
  */
 uint8_t ciphdev_create (_ciphdev *cd, uint8_t dev, uint32_t bs, const char *user_key, uint8_t len, uint8_t index){
 	cd->func_debug(_CIPHDEV_LOG_LEVEL_INFO, "Ciphdev CREATE device\0", 0, &dev, 1);
+	cd->func_debug(_CIPHDEV_LOG_LEVEL_INFO, "Ciphdev CREATE slot\0", 0, &index, 1);
 
   // El slot indicado no es válido
 	if(index > 9){
@@ -58,14 +59,15 @@ uint8_t ciphdev_create (_ciphdev *cd, uint8_t dev, uint32_t bs, const char *user
 			cd->u8key_map[i] = md5ctx.digest[i];
 		cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev CREATE: key_map\0", 0, cd->u8key_map, 16);
 
+		// randomize slots
+		for(uint8_t i = 0; i < 80; i++)
+			cd->func_random(&(cd->buff_u32[i]));
+
 		// prepare md5 for user key hash
 		md5_init(&md5ctx);
 		md5_update(&md5ctx, (uint8_t*)user_key, len);
 		md5_finalize(&md5ctx);  // hash on md5ctx.digest
-
-		// randomize unused slots
-		for(uint8_t i = 8; i < 80; i++)
-			cd->func_random(&(cd->buff_u32[i]));
+		cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev CREATE: user key hash\0", 0, md5ctx.digest, 16);
 
 		// encrypt and store keys
 		_speck sp;
@@ -344,7 +346,7 @@ uint8_t ciphdev_read (_ciphdev *cd, uint8_t* buff, uint32_t sector, uint32_t cou
 	if(cd->status == _CIPHDEV_STATUS_INIT){
 		cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev READ: sector\0", 0, (uint8_t*)&sector, 4);
 		cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev READ: count\0", 0, (uint8_t*)&count, 4);
-		if(sector+count >= cd->block_size){
+		if(sector+count-1 >= cd->block_size){
 			cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev READ: Out of bounds\0", 0, 0, 0);
 			return 2;
 		}
@@ -384,7 +386,7 @@ uint8_t ciphdev_write (_ciphdev *cd, const uint8_t *buff, uint32_t sector, uint3
 		cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev WRITE: sector\0", 0, (uint8_t*)&sector, 4);
 		cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev WRITE: count\0", 0, (uint8_t*)&count, 4);
 
-		if(sector+count >= cd->block_size){
+		if(sector+count-1 >= cd->block_size){
 			cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev WRITE: Out of bounds\0", 0, 0, 0);
 			return 2;
 		}
