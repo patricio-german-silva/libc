@@ -3,9 +3,9 @@
 #include "stdint.h"
 #include <stdio.h>
 #include <unistd.h>
-#include <stdlib.h>
 #include <time.h>
 #include <errno.h>
+#include <openssl/rand.h>
 
 #define _DEFAULT_LOG_LEVEL 6
 #define _BLOCK_MAX_SIZE 4294967295 // En sectores, tamaño maximo es 2T on a 64 bit system
@@ -58,6 +58,20 @@ typedef struct{
   uint32_t loglevel;
 }_currcmdsops;
 
+
+// Prototipos
+static void local_rand(uint32_t *r);
+static uint8_t local_initialize(uint8_t dev);
+static uint8_t local_write(uint8_t dev, const uint8_t *buff, uint32_t sector, uint32_t count);
+static uint8_t local_read(uint8_t dev, uint8_t *buff, uint32_t sector, uint32_t count);
+static uint8_t local_ioctl(uint8_t dev, uint8_t cmd, uint32_t *buff);
+static void local_debug(uint8_t level, const char *msg, const char *charg, const uint8_t *arg, uint8_t argl);
+static uint8_t _parse_params(int argc, char *argv[]);
+static void _attach_all();
+static uint8_t _dump_content_from_block();
+static uint8_t _load_data_to_block();
+static uint8_t _show_block_info();
+
 // variables globales
 _currcmdsops curcmdsops;
 _ciphdev cd;
@@ -67,7 +81,8 @@ _ciphdev cd;
  * Funciones locales para Attach
  */
 static void local_rand(uint32_t *r){
-	*r = rand();
+  if(RAND_bytes((uint8_t*)r, 4) != 1)
+	  local_debug(_CIPHDEV_LOG_LEVEL_WARN, "Libssl Notify: RAND_bytes()\0", "PRNG has not been seeded with enough randomness to ensure an unpredictable byte sequence\0", 0, 0);
 }
 
 static uint8_t local_initialize(uint8_t dev){
@@ -108,7 +123,7 @@ static void local_debug(uint8_t level, const char *msg, const char *charg, const
 		fprintf(stderr, "[ %s ] : ", levelstr[level-1]);
 	fprintf(stderr, "%s", msg);
   if(charg != NULL)	fprintf(stderr, ": %s", charg);
-	if(argl > 0){
+	if(arg != NULL && argl > 0){
 		fprintf(stderr, ": ");
 		for(uint32_t i = 0; i < argl; i++) fprintf(stderr, "%d " , arg[i]);
 		fprintf(stderr, " [0x");
@@ -201,9 +216,6 @@ static uint8_t _parse_params(int argc, char *argv[]){
 
 // Preparo el struct cd
 static void _attach_all(){
-  struct timespec ts;
-  timespec_get(&ts, time(NULL));
-	srand(ts.tv_nsec);
 	ciphdev_attach_random(&cd, &local_rand);
 	ciphdev_attach_debug(&cd, &local_debug);
 	ciphdev_attach_dev_read(&cd, &local_read);

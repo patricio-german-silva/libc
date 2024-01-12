@@ -10,7 +10,7 @@ CC = gcc
 
 # compiler flags:
 #  -Wall turns on most, but not all, compiler warnings
-CFLAGS  = -Wall -I$(IDIR)
+CFLAGS  = -Wall -I$(IDIR) -lssl -lcrypto
 
 # Program name
 TARGET = ciphdevmgr
