@@ -65,22 +65,35 @@
  *------------------------------------------------------------------------*
  * VERSIONADO:
  * ------------------------------------------------------------------------*
+ * Mantiene la version del firmware automaticamente
  * El autoversionado utiliza las variables de precompilador __DATE__ y
- * __TIME__, por lo tanto este archivo se debe recompilar siempre.
+ * __TIME__ para agregar automaticamente una marca de tiempo al parametro build
+ * por lo tanto este archivo se debe recompilar siempre.
  * Para forzar que el makefile haga esto ir a:
  * Project -> Properties -> C/C++ Build -> Settings -> Build Steps -> Pre-build Steps -> Command: touch "../Core/Src/util.c"
  *
- * Deberá existir entonces algo como
+ *  Ejemplo de uso donde el versionado puede hacerse de forma automatica o
+ *  manual mediante la definición de _FIRMWARE_VERSION_
+ *  El array firmware_version mantendrá la version de Firmware independientemente
+ *  del metodo con el que se esté setenado
+
+  // Hardcoded Firmware Version
+  //#define _FIRMWARE_VERSION_ "0.14.0-alpha\0"
 
   #ifndef _FIRMWARE_VERSION_
   #define _FIRMWARE_VERSION_PREFIX_ "0.38.0_build_\0"
   #define _FIRMWARE_VERSION_SUFFIX_ "-alpha\0"
-  char firmware_version[42];
+  char firmware_version[39];
   #else
   const char firmware_version[] = _FIRMWARE_VERSION_;
   #endif
 
- * y dentro de la funcion main()
+ * donde el tamaño del array firmware_version (39 en el ejemplo) debe ser la
+ * longitud de lo definido en _FIRMWARE_VERSION_PREFIX_ + _FIRMWARE_VERSION_SUFFIX_
+ * mas 19 caracteres del autoversionado mas el \0 al final (13+6+19+1)
+ *
+ * Dentro de la funcion main() se debe ejecutar la llamada al a funcion
+ * get_firmware_version para cargar la version en el array
  *
 
   #ifndef _FIRMWARE_VERSION_
