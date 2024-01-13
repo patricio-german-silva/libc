@@ -41,7 +41,64 @@ const char cmds[][12] = {"CREATE\0", "DUMP\0", "LOAD\0", "SETKEY\0", "DELKEY\0",
 const char ops[][12] = {"--SIZE\0", "--KEY\0", "--SLOT\0", "--FILENAME\0", "--DATETIME\0", "--NEWKEY\0", "--USERDATA0\0", "--USERDATA1\0", "--USERDATA2\0", "--LOGLEVEL\0"};
 
 // Usage comment
-const char usage[] = "USAGE: %s COMMAND OPTIONS\n";
+const char usage[] = \
+"USAGE: %s <COMMAND> <OPTIONS> \n\
+\n\
+Commands and options are not case sensitive.\n\
+\n\
+COMMANDS:\n\
+  \tcreate: creates a new empty ciphdev block.\n\
+  \t  Requires: --filename --size --key\n\
+  \t  Optional: --slot --datetime --userdata0 --userdata1 --userdata2 --loglevel\n\
+  \n\
+  \tdump: dumps de content of the block to stdout.\n\
+  \t  Requires: --filename --key\n\
+  \t  Optional: --loglevel\n\
+  \n\
+  \tload: loads content from stdin into the block.\n\
+  \t  Requires: --filename --key\n\
+  \t  Optional: --loglevel\n\
+  \n\
+  \tsetkey: sets/add a new key to the block on the specified slot.\n\
+  \t  Requires: --filename --key --newkey --slot\n\
+  \t  Optional: --loglevel\n\
+  \n\
+  \tdelkey: removes a key from de specified slot.\n\
+  \t  Requires: --filename --key --slot\n\
+  \t  Optional: --loglevel\n\
+  \n\
+  \tsetdata: sets de user data stored on the block.\n\
+  \t  Requires: --filename --key [ --userdata0 | --userdata1 | --userdata2 ]\n\
+  \t  Optional: --loglevel\n\
+  \n\
+  \tsetdatetime: sets the creation datetime.\n\
+  \t  Requires: --filename --key --datetime\n\
+  \t  Optional: --loglevel\n\
+  \n\
+  \tsetsize: sets the size of the block, file size is not modified. It may\n\
+  \t         corrupt your data if you shrink the block with a volume on it.\n\
+  \t  Requires: --filename --key --size\n\
+  \t  Optional: --loglevel\n\
+  \n\
+  \tinfo: displays data (sensitive) of the block .\n\
+  \t  Requires: --filename --key\n\
+  \t  Optional: --loglevel\n\
+  \n\
+  \nOPTIONS:\
+  \n\
+  \t--size: block size.\n\
+  \t--key: key used to create/open a block.\n\
+  \t--slot: key slot to modify/delete.\n\
+  \t--filename: file where the block will be created/open.\n\
+  \t--datetime: creation datetime for the block.\n\
+  \t--newkey: new key to add to a specified slot.\n\
+  \t--userdata0:\n\
+  \t--userdata1:\n\
+  \t--userdata2: user data to store on one of the tree 32-bit userdata fields.\n\
+  \t--loglevel: changes de default log level to use during execution. \n\
+  \t            It is efective at load time. In debug mode or more (5) sensitive\n\
+  \t            data is displayed to stderr\n\
+  \n";
 
 // Curr cmds/ops values
 // Flags indica si cada parametro fue o no seteado, dependiendo del parametreo puede requerirlo

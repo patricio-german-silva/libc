@@ -42,7 +42,6 @@
 #include "md5.h"
 #include "speck.h"
 #include "stdint.h"
-#include <time.h>
 
 #define _CIPHDEV_VERSION 4
 #define _CIPHDEV_SECTOR_SIZE 512
@@ -77,8 +76,11 @@ typedef uint8_t (*ciphdev_dev_read_def)(uint8_t dev, uint8_t *buff, uint32_t sec
 typedef uint8_t (*ciphdev_dev_write_def)(uint8_t dev, const uint8_t *buff, uint32_t sector, uint32_t count);
 typedef uint8_t (*ciphdev_dev_ioctl_def)(uint8_t dev, uint8_t cmd, uint32_t *buff);
 typedef void (*ciphdev_random_def)(uint32_t *buff);
-typedef uint32_t (*ciphdev_time_def)();
-typedef void (*ciphdev_debug_def)(uint8_t level, const char *msg, const uint8_t *arg, uint8_t argl);
+typedef void (*ciphdev_debug_def)(uint8_t level, const char *msg, const char *charg, const uint8_t *arg, uint8_t argl);
+
+
+// Device status by name
+static const char device_status[][13] = {"NOINIT\0", "INIT\0", "KEYERROR\0", "IOERROR\0", "READ_ERROR\0", "WRITE_ERROR\0", "HEADER_ERROR\0"};
 
 /* Estructura de datos que mantiene un bloque cifrado */
 typedef struct{
@@ -132,20 +134,20 @@ typedef struct{
 	ciphdev_dev_write_def func_dev_write;
 	ciphdev_dev_ioctl_def func_dev_ioctl;
 	ciphdev_random_def func_random;
-	ciphdev_time_def func_time;
 	ciphdev_debug_def func_debug;
 } _ciphdev;
 
 /* Crea un bloque cifrado cd en el dispositvo dev de un tamaño bs sectores
  * utilizando la frase de cifrado de usuario user_key de longitud len que se
- * almacenará en el slot 0
+ * almacenará en el slot index
  * @return 0 si el bloque se creó correctamente
- * @return 1 si el device no se pudo inicializar
- * @return 2 si el device es mas pequeño que bs
- * @return 3 si fallo la escritura en el device
- * @return 4 si fallo la llamada ioctl a SYNC
+ * @return 1 si el indice de slot no es valido
+ * @return 2 si el device no se pudo inicializar
+ * @return 3 si el device es mas pequeño que bs
+ * @return 4 si fallo la escritura en el device
+ * @return 5 si fallo la llamada ioctl a SYNC
  */
-uint8_t ciphdev_create (_ciphdev *cd, uint8_t dev, uint32_t bs, const char *user_key, uint8_t len);
+uint8_t ciphdev_create (_ciphdev *cd, uint8_t dev, uint32_t bs, const char *user_key, uint8_t len, uint8_t index);
 
 /* Agrega/sobreescribe una clave al bloque cifrado cd previamente inizializado
  * utilizando la frase de cifrado de usuario user_key de longitud len
@@ -207,7 +209,6 @@ void ciphdev_attach_dev_read(_ciphdev *cd, ciphdev_dev_read_def f);
 void ciphdev_attach_dev_write(_ciphdev *cd, ciphdev_dev_write_def f);
 void ciphdev_attach_dev_ioctl(_ciphdev *cd, ciphdev_dev_ioctl_def f);
 void ciphdev_attach_random(_ciphdev *cd, ciphdev_random_def f);
-void ciphdev_attach_time(_ciphdev *cd, ciphdev_time_def f);
 void ciphdev_attach_debug(_ciphdev *cd, ciphdev_debug_def f);
 
 #endif /*  CIPHDEV_H  */
