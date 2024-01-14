@@ -10,7 +10,7 @@ CC = gcc
 
 # compiler flags:
 #  -Wall turns on most, but not all, compiler warnings
-CFLAGS  = -Wall -I$(IDIR) -lssl -lcrypto
+CFLAGS  = -Wall -Wpedantic -I$(IDIR) -g -lssl -lcrypto
 
 # Program name
 TARGET = ciphdevmgr
@@ -35,9 +35,11 @@ OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 $(TARGET): $(OBJ) $(SRCS)
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
-$(ODIR)/%.o: %.c $(DEPS)
-	mkdir -p $(@D)
+$(ODIR)/%.o: %.c $(ODIR) $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(ODIR):
+	mkdir -p $(ODIR)
 
 .PHONY: clean
 

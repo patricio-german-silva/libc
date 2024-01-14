@@ -10,16 +10,16 @@ CC = gcc
 
 # compiler flags:
 #  -Wall turns on most, but not all, compiler warnings
-CFLAGS  = -Wall -I$(IDIR) -lssl -lcrypto
+CFLAGS  = -Wall -I$(IDIR)
 
 # Program name
-TARGET = ciphdevmgr
+TARGET = fatfstest
 
 # Files with no headers, like main.c
 SRCS = main.c
 
 # Dependency files
-_DEPS = ciphdev.h md5.h speck.h strutil.h
+_DEPS = md5.h ciphdev.h speck.h ff.h diskio.h
 _OBJ = $(_DEPS:.h=.o)
 
 # Directories
@@ -35,9 +35,11 @@ OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 $(TARGET): $(OBJ) $(SRCS)
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
-$(ODIR)/%.o: %.c $(DEPS)
-	mkdir -p $(@D)
+$(ODIR)/%.o: %.c $(ODIR) $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(ODIR):
+	mkdir -p $(ODIR)
 
 .PHONY: clean
 
