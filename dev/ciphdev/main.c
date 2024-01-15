@@ -21,6 +21,7 @@ uint32_t local_time(){
 uint8_t local_initialize(uint8_t dev){
 	if(fp == NULL)
 		fp = fopen("/home/psilva/dev.img" ,"rb+");
+  if(fp == NULL) return 1;
 	return 0;
 }
 
@@ -47,30 +48,29 @@ uint8_t local_ioctl(uint8_t dev, uint8_t cmd, uint32_t *buff){
 	return 0;
 }
 
-void local_debug(uint8_t level, const char *msg, const uint8_t *arg, uint8_t argl){
-	const char levelstr[][6] = {"FATAL\0", "ERROR\0", "WARN\0", "INFO\0", "DEBUG\0", "TRACE\0"};
-	if(level > _LOG_LEVEL) return;
-	if(level <= 6)
-		printf("[ %s ] : ", levelstr[level-1]);
-	printf("%s", msg);
-	if(argl > 0){
-		printf(": ");
-		for(uint32_t i = 0; i < argl; i++) printf("%d " , arg[i]);
-		printf(" [0x");
-		for(uint32_t i = 0; i < argl; i++) printf("%02x", arg[i]);
-		printf("]\n");
-	}else{
-		printf("\n");
-	}
+// Send output to stderr
+static void local_debug(uint8_t level, const char *msg, const char *charg, const uint8_t *arg, uint8_t argl){
+        const char levelstr[][6] = {"FATAL\0", "ERROR\0", "WARN\0", "INFO\0", "DEBUG\0", "TRACE\0"};
+        if(level > _LOG_LEVEL) return;
+        if(level <= 6)
+                fprintf(stderr, "[ %s ] : ", levelstr[level-1]);
+        fprintf(stderr, "%s", msg);
+  if(charg != NULL)     fprintf(stderr, ": %s", charg);
+        if(arg != NULL && argl > 0){
+                fprintf(stderr, ": ");
+                for(uint32_t i = 0; i < argl; i++) fprintf(stderr, "%d " , arg[i]);
+                fprintf(stderr, " [0x");
+                for(uint32_t i = 0; i < argl; i++) fprintf(stderr, "%02x", arg[i]);
+                fprintf(stderr, "]\n");
+        }else{
+                fprintf(stderr, "\n");
+        }
 }
-
-
 
 int main(){
 	_ciphdev cd;
 	srand(time(NULL));
 	ciphdev_attach_random(&cd, &local_rand);
-	ciphdev_attach_time(&cd, &local_time);
 	ciphdev_attach_debug(&cd, &local_debug);
 	ciphdev_attach_dev_read(&cd, &local_read);
 	ciphdev_attach_dev_write(&cd, &local_write);
@@ -79,7 +79,8 @@ int main(){
   cd.user_data[0] = 29;
   cd.user_data[1] = 171;
   cd.user_data[2] = 702;
-	printf("Create ecod: %d\n", ciphdev_create(&cd, 0, 1024*100*2, "laguagua", 8));
+  cd.datetime = time(NULL);
+	printf("Create ecod: %d\n", ciphdev_create(&cd, 0, 1024*100*2, "laguagua", 8, 0));
 	printf("Initialize ecod: %d\n", ciphdev_initialize(&cd, 0, "laguagua", 8));
 	printf("add key ecod: %d\n", ciphdev_addkey(&cd, "watafucke", 9, 3));
 	//printf("delete key ecod: %d\n", ciphdev_deletekey(&cd, 0));

@@ -3,13 +3,13 @@ CC = gcc
 
 # compiler flags:
 #  -Wall turns on most, but not all, compiler warnings
-CFLAGS  = -Wall
+CFLAGS  = -Wall -Wpedantic
 
 # the build target executable:
-TARGET = ciphdevapp
+TARGET = main
 
 # define the C source files
-SRCS = main.c ciphdev.c md5.c speck.c
+SRCS = main.c ciphdev.c md5.c speck_sc.c
 
 # define the C object files
 #

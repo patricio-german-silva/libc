@@ -19,7 +19,7 @@ TARGET = ciphdevmgr
 SRCS = main.c
 
 # Dependency files
-_DEPS = ciphdev.h md5.h speck.h strutil.h
+_DEPS = ciphdev.h md5.h speck_sc.h strutil.h
 _OBJ = $(_DEPS:.h=.o)
 
 # Directories

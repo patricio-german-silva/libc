@@ -347,10 +347,13 @@ static uint8_t _show_block_info(){
 	for(uint8_t i = 0; i < 16; i++) printf("%02x", cd.u8speck_key2[i]);
   printf("\n\tKey map:     0x");
 	for(uint8_t i = 0; i < 16; i++) printf("%02x", cd.u8key_map[i]);
+  printf("\n\tIVector:     0x");
+	for(uint8_t i = 0; i < 8; i++) printf("%02x", cd.u8init_vector[i]);
   printf("\n\tSector Size (bytes): %d\n",_CIPHDEV_SECTOR_SIZE);
   printf("\tBlock Size (sectors): %d\n",cd.block_size);
   printf("\tTotal Size (bytes): %d\n",cd.block_size*_CIPHDEV_SECTOR_SIZE);
   printf("\tBlock version: %d\n", cd.version);
+  printf("\tCurr version: %d\n", _CIPHDEV_VERSION);
   time_t t = (time_t)cd.datetime;
   printf("\tCreation date/time: %s", ctime(&t));
   printf("\tUser data[0]: 0x%02x\n", cd.user_data[0]);

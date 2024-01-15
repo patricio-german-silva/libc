@@ -1,10 +1,11 @@
 /**
  * ciphdev permite crear y mantener un bloque cifrado mediante el algoritmo
- * criptografico SPECK con clave de 128 bytes.
+ * criptografico de bloque SPECK 64/128 y modo de operación CBC.
  *
  * La clave de cifrado SPECK es creada durante la inicialización y se almacena
- * cifrada utilizando las claves de usuario. Por defecto se cuenta con 10 slots
- * para almacenar las claves cifradas.
+ * cifrada utilizando las claves de usuario y el numero de slot como vector de
+ * ncializacion. Por defecto se cuenta con 10 slots para almacenar las claves
+ * cifradas.
  *
  * El bloque posee un cifrado dual por lo que se posee dos claves de cifrado
  * SPECK. La clave de cifrado a utilizar para cada sector depende del md5
@@ -13,15 +14,20 @@
  * EL header de control ocupa el sector 0 de 512 bytes, cada slot con las Claves
  * cifradas se ubican consucutivamente, ocupando 32 bytes cada par de claves
  * osea [0..319].
- * El resto del sector se cifra con la key 1, siendo:
- * La ubicación [320..323] es el tamaño del bloque en sectores
- * La ubicación [324..327] es la version de ciphdev (_CIPHDEV_VERSION)
- * La ubicación [328..331] es la fecha de creacion del bloque
- * La ubicación [332..343] son 12 bytes arbitrarios definibles por el usuario
- * La ubicación [344..492] se randomiza y se cifra con la key 1.
- * Los ultimos 16 bytes corresponden al hash md5 de esos 176 bytes cifrados
+ * La ubicacion [320..327] es el vector de incializacion en plano
+ * El resto del sector se cifra con la key 1, y el vector de inicializacion
+ * Siendo:
+ * La ubicación [328..331] es el tamaño del bloque en sectores
+ * La ubicación [332..335] es la version de ciphdev (_CIPHDEV_VERSION)
+ * La ubicación [336..339] es la fecha de creacion del bloque
+ * La ubicación [340..351] son 12 bytes arbitrarios definibles por el usuario
+ * La ubicación [352..495] se randomiza y se cifra con la key 1.
+ * Los ultimos 16 bytes corresponden al hash md5 de esos 168 bytes cifrados
  * Es necesario que esto se cumpla para poder inicializar un bloque.
  *
+ * El resto de contenido del bloque se cifra mediante una incorporacion de
+ * modo de operacion CNC (Counter) haciendo un XOR del vector de inicializacion
+ * con el numero de bloque
  *
  * SPECK is a lightweight block cipher publicly released by the National
  * Security Agency (NSA) in June 2013.
@@ -34,16 +40,16 @@
  *
  * @author Patricio Silva
  * @date Dec 21, 2023
- * @version 0.4
+ * @version 0.1.4
  */
 #ifndef CIPHDEV_H
 #define CIPHDEV_H
 
 #include "md5.h"
-#include "speck.h"
+#include "speck_sc.h"
 #include "stdint.h"
 
-#define _CIPHDEV_VERSION 4
+#define _CIPHDEV_VERSION 1004
 #define _CIPHDEV_SECTOR_SIZE 512
 #define _CIPHDEV_RANDOMIZE_UNUSED
 
@@ -106,6 +112,12 @@ typedef struct{
 		uint8_t u8key_map[16];
 	};
 
+	// vector de incialización
+	union{
+		uint32_t init_vector[2];
+		uint8_t u8init_vector[8];
+	};
+
 	// Tamaño del bloque, en sectores de 512 bytes
 	uint32_t block_size;
 
@@ -117,8 +129,8 @@ typedef struct{
 
   // User data
   union{
-    uint8_t u8user_data[12];
     uint32_t user_data[3];
+    uint8_t u8user_data[12];
   };
 
 	// Buffer

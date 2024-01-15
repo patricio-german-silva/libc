@@ -7,9 +7,9 @@
  */
 void speck_init(_speck *s, const uint32_t K[4]){
 	uint32_t D=K[3];
-  uint32_t C=K[2];
-  uint32_t B=K[1];
-  uint32_t A=K[0];
+	uint32_t C=K[2];
+	uint32_t B=K[1];
+	uint32_t A=K[0];
 	for(uint8_t i = 0 ; i < 27 ;){
 		s->rk[i]=A;
 		B=(B>>8 | B<<24);
@@ -41,7 +41,7 @@ void speck_init(_speck *s, const uint32_t K[4]){
  */
 void speck_encrypt(_speck *s, uint32_t const pt[2], uint32_t ct[2]){
 	ct[0]=pt[0];
-  ct[1]=pt[1];
+	ct[1]=pt[1];
 	for(uint8_t i = 0; i < 27;){
 		ct[1]=(ct[1]>>8 | ct[1]<<24);
 		ct[1]+=ct[0];
@@ -58,7 +58,7 @@ void speck_encrypt(_speck *s, uint32_t const pt[2], uint32_t ct[2]){
  */
 void speck_decrypt(_speck *s, uint32_t const ct[2], uint32_t pt[2]){
 	pt[0]=ct[0];
-  pt[1]=ct[1];
+	pt[1]=ct[1];
 	for(int8_t i = 26 ; i >= 0;){
 		pt[0]^=pt[1];
 		pt[0]=(pt[0]>>3 | pt[0]<<29);
