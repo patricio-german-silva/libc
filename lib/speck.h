@@ -20,7 +20,7 @@
 
 
 typedef struct{
-    uint32_t kb[27];
+    uint32_t rk[27];
 } _speck;
 
 
