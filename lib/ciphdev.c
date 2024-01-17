@@ -10,9 +10,11 @@
 // Funciones de bajo nivel
 static uint8_t ciphdev_header_verify(_ciphdev *cd);
 
+
+
 /* Crea un bloque cifrado cd en el dispositvo dev de un tamaño bs sectores
  * utilizando la frase de cifrado de usuario user_key de longitud len que se
- * almacenará en el slot index
+ * almacenará en el slot slot
  * @return 0 si el bloque se creó correctamente
  * @return 1 si el indice de slot no es valido
  * @return 2 si el device no se pudo inicializar
@@ -20,13 +22,13 @@ static uint8_t ciphdev_header_verify(_ciphdev *cd);
  * @return 4 si fallo la escritura en el device
  * @return 5 si fallo la llamada ioctl a SYNC
  */
-uint8_t ciphdev_create (_ciphdev *cd, uint8_t dev, uint32_t bs, const char *user_key, uint8_t len, uint8_t index){
+uint8_t ciphdev_create (_ciphdev *cd, uint8_t dev, uint32_t bs, const char *user_key, uint8_t len, uint8_t slot){
 	cd->func_debug(_CIPHDEV_LOG_LEVEL_INFO, "Ciphdev CREATE device\0", 0, &dev, 1);
-	cd->func_debug(_CIPHDEV_LOG_LEVEL_INFO, "Ciphdev CREATE slot\0", 0, &index, 1);
+	cd->func_debug(_CIPHDEV_LOG_LEVEL_INFO, "Ciphdev CREATE slot\0", 0, &slot, 1);
 
-  // El slot indicado no es válido
-	if(index > 9){
-		cd->func_debug(_CIPHDEV_LOG_LEVEL_INFO, "Ciphdev ADD_KEY: Slot index out of bonds. index\0", 0, &index , 1);
+	// El slot indicado no es válido
+	if(slot > 9){
+		cd->func_debug(_CIPHDEV_LOG_LEVEL_INFO, "Ciphdev ADD_KEY: Slot index out of bonds. slot\0", 0, &slot , 1);
 		return 1;
 	}
 
@@ -50,12 +52,12 @@ uint8_t ciphdev_create (_ciphdev *cd, uint8_t dev, uint32_t bs, const char *user
 		cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev CREATE: speck key 1 (decrypt)\0", 0, cd->u8speck_key1, 16);
 		cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev CREATE: speck key 2 (decrypt)\0", 0, cd->u8speck_key2, 16);
 
-    // Create initialization vector
+		// Create initialization vector
 		cd->func_random(&(cd->init_vector[0]));
 		cd->func_random(&(cd->init_vector[1]));
-    cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev CREATE: Initialization Vector\0", 0, cd->u8init_vector, 8);
+		cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev CREATE: Initialization Vector\0", 0, cd->u8init_vector, 8);
 
-    // prepare md5 for key map
+		// prepare md5 for key map
 		_md5_context md5ctx;
 		md5_init(&md5ctx);
 		md5_update(&md5ctx, cd->u8speck_key1, 16);
@@ -77,16 +79,16 @@ uint8_t ciphdev_create (_ciphdev *cd, uint8_t dev, uint32_t bs, const char *user
 
 		// encrypt and store keys
 		_speck_sc sp;
-    uint32_t local_u32[2];  // Utility array
-    local_u32[0] = index;
-    local_u32[1] = 0;
+		uint32_t local_u32[2];  // Utility array
+		local_u32[0] = slot;
+		local_u32[1] = 0;
 		speck_sc_init(&sp, (uint32_t*)md5ctx.digest, local_u32);
-		speck_sc_encrypt(&sp, cd->speck_key1, &(cd->buff_u32[(index*8)]));
-		speck_sc_encrypt(&sp, &(cd->speck_key1[2]), &(cd->buff_u32[(index*8)+2]));
-		speck_sc_encrypt(&sp, cd->speck_key2, &(cd->buff_u32[(index*8)+4]));
-		speck_sc_encrypt(&sp, &(cd->speck_key2[2]), &(cd->buff_u32[(index*8)+6]));
+		speck_sc_encrypt(&sp, cd->speck_key1, &(cd->buff_u32[(slot*8)]));
+		speck_sc_encrypt(&sp, &(cd->speck_key1[2]), &(cd->buff_u32[(slot*8)+2]));
+		speck_sc_encrypt(&sp, cd->speck_key2, &(cd->buff_u32[(slot*8)+4]));
+		speck_sc_encrypt(&sp, &(cd->speck_key2[2]), &(cd->buff_u32[(slot*8)+6]));
 
-    // Almaceno vector de inicializacion
+		// Almaceno vector de inicializacion
 		cd->buff_u32[80] = cd->init_vector[0];
 		cd->buff_u32[81] = cd->init_vector[1];
 
@@ -101,26 +103,26 @@ uint8_t ciphdev_create (_ciphdev *cd, uint8_t dev, uint32_t bs, const char *user
 		speck_sc_encrypt(&sp, local_u32, &(cd->buff_u32[82]));
 		md5_update(&md5ctx, (uint8_t*)&(local_u32[0]), 8);
 
-    // Agrego currtime y user_data[0]
-    local_u32[0] = cd->datetime;
+		// Agrego currtime y user_data[0]
+		local_u32[0] = cd->datetime;
 		cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev CREATE: DATETIME\0", 0, (uint8_t*)&local_u32[0], 4);
 		local_u32[1] = cd->user_data[0];
 		speck_sc_encrypt(&sp, local_u32, &(cd->buff_u32[84]));
 		md5_update(&md5ctx, (uint8_t*)&(local_u32[0]), 8);
 
-    // Agrego user_data[1,2]
+		// Agrego user_data[1,2]
 		local_u32[0] = cd->user_data[1];
 		local_u32[1] = cd->user_data[2];
 		speck_sc_encrypt(&sp, local_u32, &(cd->buff_u32[86]));
 		md5_update(&md5ctx, (uint8_t*)&(local_u32[0]), 8);
 		cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev CREATE: USER DATA\0", 0, cd->u8user_data, 12);
 
-    // randomizo 144 bytes y los cifro
+		// randomizo 144 bytes y los cifro
 		for(uint8_t i = 88; i < 124; i+=2){
 			cd->func_random(&(local_u32[0]));
 			cd->func_random(&(local_u32[1]));
 			speck_sc_encrypt(&sp, local_u32, &(cd->buff_u32[i]));
-		  md5_update(&md5ctx, (uint8_t*)&(local_u32[0]), 8);
+			md5_update(&md5ctx, (uint8_t*)&(local_u32[0]), 8);
 		}
 		md5_finalize(&md5ctx);  // hash on md5ctx.digest
 
@@ -169,11 +171,11 @@ uint8_t ciphdev_create (_ciphdev *cd, uint8_t dev, uint32_t bs, const char *user
  * @return 4 si el indice indicado esta fuera de rango
  * @return 5 si fallo la escritura en el device
  * @return 6 si fallo la llamada ioctl a SYNC */
-uint8_t ciphdev_addkey (_ciphdev *cd, const char *user_key, uint8_t len, uint8_t index){
+uint8_t ciphdev_addkey (_ciphdev *cd, const char *user_key, uint8_t len, uint8_t slot){
 	if(cd->status == _CIPHDEV_STATUS_INIT){
-		cd->func_debug(_CIPHDEV_LOG_LEVEL_INFO, "Ciphdev ADD_KEY on index\0", 0, &index , 1);
-		if(index > 9){
-			cd->func_debug(_CIPHDEV_LOG_LEVEL_INFO, "Ciphdev ADD_KEY: Slot index out of bonds. index\0", 0, &index , 1);
+		cd->func_debug(_CIPHDEV_LOG_LEVEL_INFO, "Ciphdev ADD_KEY on slot\0", 0, &slot , 1);
+		if(slot > 9){
+			cd->func_debug(_CIPHDEV_LOG_LEVEL_INFO, "Ciphdev ADD_KEY: Slot index out of bonds. slot\0", 0, &slot , 1);
 			return 4;
 		}
 
@@ -191,14 +193,14 @@ uint8_t ciphdev_addkey (_ciphdev *cd, const char *user_key, uint8_t len, uint8_t
 
 		// prepare cipher
 		_speck_sc sp;
-    uint32_t local_u32[2];  // Utility array
-    local_u32[0] = index;
-    local_u32[1] = 0;
+		uint32_t local_u32[2];  // Utility array
+		local_u32[0] = slot;
+		local_u32[1] = 0;
 		speck_sc_init(&sp, (uint32_t*)md5ctx.digest, local_u32);
-		speck_sc_encrypt(&sp, cd->speck_key1, &(cd->buff_u32[index*8]));
-		speck_sc_encrypt(&sp, &(cd->speck_key1[2]), &(cd->buff_u32[(index*8)+2]));
-		speck_sc_encrypt(&sp, cd->speck_key2, &(cd->buff_u32[(index*8)+4]));
-		speck_sc_encrypt(&sp, &(cd->speck_key2[2]), &(cd->buff_u32[(index*8)+6]));
+		speck_sc_encrypt(&sp, cd->speck_key1, &(cd->buff_u32[slot*8]));
+		speck_sc_encrypt(&sp, &(cd->speck_key1[2]), &(cd->buff_u32[(slot*8)+2]));
+		speck_sc_encrypt(&sp, cd->speck_key2, &(cd->buff_u32[(slot*8)+4]));
+		speck_sc_encrypt(&sp, &(cd->speck_key2[2]), &(cd->buff_u32[(slot*8)+6]));
 
 		// write to device inmediatly
 		if(cd->func_dev_write(cd->dev, cd->buff_u8, 0, 1) != 0){
@@ -211,24 +213,24 @@ uint8_t ciphdev_addkey (_ciphdev *cd, const char *user_key, uint8_t len, uint8_t
 			cd->status = _CIPHDEV_STATUS_IOERROR;
 			return 6;
 		}
-		cd->func_debug(_CIPHDEV_LOG_LEVEL_INFO, "Ciphdev ADD_KEY SUCCESS on index\0", 0, &index , 1);
+		cd->func_debug(_CIPHDEV_LOG_LEVEL_INFO, "Ciphdev ADD_KEY SUCCESS on slot\0", 0, &slot , 1);
 		return 0;
 	}
-	cd->func_debug(_CIPHDEV_LOG_LEVEL_WARN, "Ciphdev ADD_KEY FAILURE on index\0", 0, &index , 1);
+	cd->func_debug(_CIPHDEV_LOG_LEVEL_WARN, "Ciphdev ADD_KEY FAILURE on slot\0", 0, &slot , 1);
 	return 1;
 }
 
-/* borra la clave con indice indice index del bloque cifrado cd
+/* borra la clave en el slot slot del bloque cifrado cd
  * Retorna 0 la clave se borro correctamente
  * @return 1 si el bloque no fue inicializado
  * @return 2 si el indice esta fuer ade rango
  * @return 3 si fallo la escritura en el device
  * @return 4 si fallo la llamada ioctl a SYNC */
-uint8_t ciphdev_deletekey (_ciphdev *cd, uint8_t index){
+uint8_t ciphdev_deletekey (_ciphdev *cd, uint8_t slot){
 	if(cd->status == _CIPHDEV_STATUS_INIT){
-		cd->func_debug(_CIPHDEV_LOG_LEVEL_INFO, "Ciphdev DELETE_KEY on index\0", 0, &index , 1);
-		if(index > 9){
-			cd->func_debug(_CIPHDEV_LOG_LEVEL_INFO, "Ciphdev DELETE_KEY: Slot index out of bonds. index\0", 0, &index , 1);
+		cd->func_debug(_CIPHDEV_LOG_LEVEL_INFO, "Ciphdev DELETE_KEY on slot\0", 0, &slot , 1);
+		if(slot > 9){
+			cd->func_debug(_CIPHDEV_LOG_LEVEL_INFO, "Ciphdev DELETE_KEY: Slot index out of bonds. slot\0", 0, &slot , 1);
 			return 4;
 		}
 
@@ -238,7 +240,7 @@ uint8_t ciphdev_deletekey (_ciphdev *cd, uint8_t index){
 		if(cd->func_dev_read(cd->dev, cd->buff_u8, 0, 1) != 0) return 2;
 
 		for(uint8_t i = 0; i < 8; i++)
-			cd->func_random(&(cd->buff_u32[(index*8)+i]));
+			cd->func_random(&(cd->buff_u32[(slot*8)+i]));
 
 		// write to device inmediatly
 		if(cd->func_dev_write(cd->dev, cd->buff_u8, 0, 1) != 0){
@@ -251,14 +253,14 @@ uint8_t ciphdev_deletekey (_ciphdev *cd, uint8_t index){
 			cd->status = _CIPHDEV_STATUS_IOERROR;
 			return 6;
 		}
-		cd->func_debug(_CIPHDEV_LOG_LEVEL_INFO, "Ciphdev DELETE_KEY SUCCESS on index\0", 0, &index , 1);
+		cd->func_debug(_CIPHDEV_LOG_LEVEL_INFO, "Ciphdev DELETE_KEY SUCCESS on slot\0", 0, &slot , 1);
 		return 0;
 	}
-	cd->func_debug(_CIPHDEV_LOG_LEVEL_WARN, "Ciphdev DELETE_KEY FAILURE on index\0", 0, &index , 1);
+	cd->func_debug(_CIPHDEV_LOG_LEVEL_WARN, "Ciphdev DELETE_KEY FAILURE on slot\0", 0, &slot , 1);
 	return 1;
 }
 
-/* Inicializa (abre) el bloque cifrado
+/* Inicializa (abre) el bloque cifrado con la clave key en el slot slot
  * Retorna el estado actual
 #define _CIPHDEV_STATUS_NOINIT 0
 #define _CIPHDEV_STATUS_INIT 1
@@ -268,7 +270,7 @@ uint8_t ciphdev_deletekey (_ciphdev *cd, uint8_t index){
 #define _CIPHDEV_STATUS_WRITE_ERROR 5
 #define _CIPHDEV_STATUS_HEADER_ERROR 6
 */
-uint8_t ciphdev_initialize (_ciphdev *cd, uint8_t dev, const char *user_key, uint8_t len){
+uint8_t ciphdev_initialize (_ciphdev *cd, uint8_t dev, const char *user_key, uint8_t len, uint8_t slot){
 		cd->func_debug(_CIPHDEV_LOG_LEVEL_INFO, "Ciphdev INITIALIZE device\0", 0, &dev, 1);
 		// prepare md5 for user key hash
 		_md5_context md5ctx;
@@ -289,74 +291,70 @@ uint8_t ciphdev_initialize (_ciphdev *cd, uint8_t dev, const char *user_key, uin
 		}
 
 		cd->status = _CIPHDEV_STATUS_NOINIT;
+		cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev INITIALIZE: attempt key on slot\0", 0, &slot, 1);
+		md5_init(&md5ctx);
+		md5_update(&md5ctx, (uint8_t*)user_key, len);
+		md5_finalize(&md5ctx);  // hash on md5ctx.digest
+		cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev INITIALIZE: user key hash\0", 0, md5ctx.digest, 16);
 
-		// search slot
-		for(uint8_t index = 0; index < 10; index++){
-			cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev INITIALIZE: test slot\0", 0, &index, 1);
+		// prepare cipher
+		uint32_t local_u32[2];  // Utility array
+		local_u32[0] = slot;
+		local_u32[1] = 0;
+		speck_sc_init(&sp, (uint32_t*)md5ctx.digest, local_u32);
+		speck_sc_decrypt(&sp, &(cd->buff_u32[slot*8]), cd->speck_key1);
+		speck_sc_decrypt(&sp, &(cd->buff_u32[(slot*8)+2]), &(cd->speck_key1[2]));
+		speck_sc_decrypt(&sp, &(cd->buff_u32[(slot*8)+4]), cd->speck_key2);
+		speck_sc_decrypt(&sp, &(cd->buff_u32[(slot*8)+6]), &(cd->speck_key2[2]));
+		cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev INITIALIZE: speck key 1 (decrypt)\0", 0, cd->u8speck_key1, 16);
+		cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev INITIALIZE: speck key 2 (decrypt)\0", 0, cd->u8speck_key2, 16);
+
+		// Initialization vector is plain text
+		cd->init_vector[0] = cd->buff_u32[80];
+		cd->init_vector[1] = cd->buff_u32[81];
+		cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev INITIALIZE: Initialization vector\0", 0, cd->u8init_vector, 8);
+
+		if(ciphdev_header_verify(cd) == 0){
+			cd->func_debug(_CIPHDEV_LOG_LEVEL_INFO, "Ciphdev INITIALIZE: SUCCESS on slot\0", 0, &slot, 1);
+			// Initialize struct
+			cd->status = _CIPHDEV_STATUS_INIT;
+			cd->dev = dev;
+
+			// Get block data
+			speck_sc_init(&sp, cd->speck_key1, cd->init_vector);
+
+			// Get block size and ciphdev version
+			speck_sc_decrypt(&sp, &(cd->buff_u32[82]), local_u32);
+			cd->block_size = local_u32[0];
+			cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev INITIALIZE: BLOCK SIZE (sectors)\0", 0, (uint8_t*)&cd->block_size, 4);
+			cd->version = local_u32[1];
+			cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev INITIALIZE: VERSION\0", 0, (uint8_t*)&cd->version, 4);
+
+			// Get datetime and user_data[0]
+			speck_sc_decrypt(&sp, &(cd->buff_u32[84]), local_u32);
+			cd->datetime = local_u32[0];
+			cd->user_data[0] = local_u32[1];
+			cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev INITIALIZE: DATETIME\0", 0, (uint8_t*)&cd->datetime, 4);
+
+			// Get user_data[0,1]
+			speck_sc_decrypt(&sp, &(cd->buff_u32[86]), local_u32);
+			cd->user_data[1] = local_u32[0];
+			cd->user_data[2] = local_u32[1];
+			cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev CREATE: USER DATA\0", 0, &cd->u8user_data[0], 12);
+
+			// Load key_map
 			md5_init(&md5ctx);
-			md5_update(&md5ctx, (uint8_t*)user_key, len);
-			md5_finalize(&md5ctx);  // hash on md5ctx.digest
-			cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev INITIALIZE: user key hash\0", 0, md5ctx.digest, 16);
-
-			// prepare cipher
-      uint32_t local_u32[2];  // Utility array
-      local_u32[0] = index;
-      local_u32[1] = 0;
-			speck_sc_init(&sp, (uint32_t*)md5ctx.digest, local_u32);
-			speck_sc_decrypt(&sp, &(cd->buff_u32[index*8]),  cd->speck_key1);
-			speck_sc_decrypt(&sp, &(cd->buff_u32[(index*8)+2]),  &(cd->speck_key1[2]));
-			speck_sc_decrypt(&sp, &(cd->buff_u32[(index*8)+4]),  cd->speck_key2);
-			speck_sc_decrypt(&sp, &(cd->buff_u32[(index*8)+6]),  &(cd->speck_key2[2]));
-			cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev INITIALIZE: speck key 1 (decrypt)\0", 0, cd->u8speck_key1, 16);
-			cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev INITIALIZE: speck key 2 (decrypt)\0", 0, cd->u8speck_key2, 16);
-
-      // Initialization vector is plain text
-      cd->init_vector[0] = cd->buff_u32[80];
-      cd->init_vector[1] = cd->buff_u32[81];
-			cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev INITIALIZE: Initialization vector\0", 0, cd->u8init_vector, 8);
-
-			if(ciphdev_header_verify(cd) == 0){
-				cd->func_debug(_CIPHDEV_LOG_LEVEL_INFO, "Ciphdev INITIALIZE: SUCCESS on slot\0", 0, &index, 1);
-				// Initialize struct
-				cd->status = _CIPHDEV_STATUS_INIT;
-				cd->dev = dev;
-
-        // Get block data
-				speck_sc_init(&sp, cd->speck_key1, cd->init_vector);
-
-        // Get block size and ciphdev version
-        speck_sc_decrypt(&sp, &(cd->buff_u32[82]), local_u32);
-				cd->block_size = local_u32[0];
-				cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev INITIALIZE: BLOCK SIZE (sectors)\0", 0, (uint8_t*)&cd->block_size, 4);
-				cd->version = local_u32[1];
-				cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev INITIALIZE: VERSION\0", 0, (uint8_t*)&cd->version, 4);
-
-        // Get datetime and user_data[0]
-        speck_sc_decrypt(&sp, &(cd->buff_u32[84]), local_u32);
-				cd->datetime = local_u32[0];
-				cd->user_data[0] = local_u32[1];
-				cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev INITIALIZE: DATETIME\0", 0, (uint8_t*)&cd->datetime, 4);
-
-        // Get user_data[0,1]
-				speck_sc_decrypt(&sp, &(cd->buff_u32[86]), local_u32);
-				cd->user_data[1] = local_u32[0];
-				cd->user_data[2] = local_u32[1];
-		    cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev CREATE: USER DATA\0", 0, &cd->u8user_data[0], 12);
-
-				// Load key_map
-				md5_init(&md5ctx);
-				md5_update(&md5ctx, cd->u8speck_key1, 16);
-				md5_update(&md5ctx, cd->u8speck_key2, 16);
-				md5_finalize(&md5ctx);
-				for(uint8_t i = 0; i < 16; i++)
-					cd->u8key_map[i] = md5ctx.digest[i];
-				cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev INITIALIZE: key_map\0", 0, cd->u8key_map, 16);
-				return cd->status;  // all OK
-			}else{
-				cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev INITIALIZE: FAILURE on slot\0", 0, &index, 1);
-			}
+			md5_update(&md5ctx, cd->u8speck_key1, 16);
+			md5_update(&md5ctx, cd->u8speck_key2, 16);
+			md5_finalize(&md5ctx);
+			for(uint8_t i = 0; i < 16; i++)
+				cd->u8key_map[i] = md5ctx.digest[i];
+			cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev INITIALIZE: key_map\0", 0, cd->u8key_map, 16);
+			return cd->status;  // all OK
+		}else{
+			cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev INITIALIZE: FAILURE on slot\0", 0, &slot, 1);
+			cd->status = _CIPHDEV_STATUS_KEYERROR;
 		}
-		cd->status = _CIPHDEV_STATUS_KEYERROR;
 		return cd->status;
 }
 
@@ -381,10 +379,10 @@ uint8_t ciphdev_read (_ciphdev *cd, uint8_t* buff, uint32_t sector, uint32_t cou
 
 		_speck_sc sp;
 		uint32_t cursect;
-    uint32_t local_u32[2];
-    local_u32[0] = cd->init_vector[0];
+		uint32_t local_u32[2];
+		local_u32[0] = cd->init_vector[0];
 		for(uint32_t i = 0; i < count; i++){
-      local_u32[1] = (cd->init_vector[1] ^ (sector+i));
+			local_u32[1] = (cd->init_vector[1] ^ (sector+i));
 			// prepare cipher
 			if(cd->u8key_map[(sector+i)%16] & (1<<((sector+i)%8)))
 				speck_sc_init(&sp, cd->speck_key1, local_u32);
@@ -425,10 +423,10 @@ uint8_t ciphdev_write (_ciphdev *cd, const uint8_t *buff, uint32_t sector, uint3
 		// prepare cipher
 		_speck_sc sp;
 		uint32_t cursect;
-    uint32_t local_u32[2];
-    local_u32[0] = cd->init_vector[0];
+		uint32_t local_u32[2];
+		local_u32[0] = cd->init_vector[0];
 		for(uint32_t i = 0; i < count; i++){
-      local_u32[1] = (cd->init_vector[1] ^ (sector+i));
+			local_u32[1] = (cd->init_vector[1] ^ (sector+i));
 			if(cd->u8key_map[(sector+i)%16] & (1<<((sector+i)%8)))
 				speck_sc_init(&sp, cd->speck_key1, local_u32);
 			else
@@ -467,7 +465,7 @@ uint8_t ciphdev_rewrite_header (_ciphdev *cd){
 			return 3;
 		}
 
-    // prepare cipher
+		// prepare cipher
 		_speck_sc sp;
 		_md5_context md5ctx;
 
@@ -476,7 +474,7 @@ uint8_t ciphdev_rewrite_header (_ciphdev *cd){
 		// Agrego tamaño y version
 		speck_sc_init(&sp, cd->speck_key1, cd->init_vector);
 		md5_init(&md5ctx);
-    uint32_t local_u32[2];
+		uint32_t local_u32[2];
 		local_u32[0] = cd->block_size;	// 4 bytes for size
 		local_u32[1] = cd->version;	// 4 bytes for version
 		cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev REWRITE HEADER: BLOCK SIZE (sectors)\0", 0, (uint8_t*)&local_u32[0], 4);
@@ -484,26 +482,26 @@ uint8_t ciphdev_rewrite_header (_ciphdev *cd){
 		speck_sc_encrypt(&sp, local_u32, &(cd->buff_u32[82]));
 		md5_update(&md5ctx, (uint8_t*)&(local_u32[0]), 8);
 
-    // Agrego currtime y user_data[0]
-    local_u32[0] = cd->datetime;
+		// Agrego currtime y user_data[0]
+		local_u32[0] = cd->datetime;
 		cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev REWRITE HEADER: DATETIME\0", 0, (uint8_t*)&local_u32[0], 4);
 		local_u32[1] = cd->user_data[0];
 		speck_sc_encrypt(&sp, local_u32, &(cd->buff_u32[84]));
 		md5_update(&md5ctx, (uint8_t*)&(local_u32[0]), 8);
 
-    // Agrego user_data[1,2]
+		// Agrego user_data[1,2]
 		local_u32[0] = cd->user_data[1];
 		local_u32[1] = cd->user_data[2];
 		speck_sc_encrypt(&sp, local_u32, &(cd->buff_u32[86]));
 		md5_update(&md5ctx, (uint8_t*)&(local_u32[0]), 8);
 		cd->func_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "Ciphdev REWRITE HEADER: USER DATA\0", 0, cd->u8user_data, 12);
 
-    // randomizo 144 bytes y los cifro
+		// randomizo 144 bytes y los cifro
 		for(uint8_t i = 88; i < 124; i+=2){
 			cd->func_random(&(local_u32[0]));
 			cd->func_random(&(local_u32[1]));
 			speck_sc_encrypt(&sp, local_u32, &(cd->buff_u32[i]));
-		  md5_update(&md5ctx, (uint8_t*)&(local_u32[0]), 8);
+			md5_update(&md5ctx, (uint8_t*)&(local_u32[0]), 8);
 		}
 		md5_finalize(&md5ctx);  // hash on md5ctx.digest
 
@@ -535,18 +533,18 @@ uint8_t ciphdev_rewrite_header (_ciphdev *cd){
 
 /* ioctl, retorna valor segun el comando cmd */
 uint8_t ciphdev_ioctl (_ciphdev *cd, uint8_t cmd, uint32_t *buff){
-  switch(cmd){
-    case _CIPHDEV_CTRL_GET_SECTOR_COUNT:
-      *buff = cd->block_size;
-      return 0;
-    case _CIPHDEV_CTRL_GET_SECTOR_SIZE:
-      *buff = _CIPHDEV_SECTOR_SIZE;
-      return 0;
-    case _CIPHDEV_CTRL_SYNC:
-      return cd->func_dev_ioctl(cd->dev, _CIPHDEV_CTRL_SYNC, buff);
-    default:
-	    return cd->func_dev_ioctl(cd->dev, cmd, buff);
-  }
+	switch(cmd){
+		case _CIPHDEV_CTRL_GET_SECTOR_COUNT:
+			*buff = cd->block_size;
+			return 0;
+		case _CIPHDEV_CTRL_GET_SECTOR_SIZE:
+			*buff = _CIPHDEV_SECTOR_SIZE;
+			return 0;
+		case _CIPHDEV_CTRL_SYNC:
+			return cd->func_dev_ioctl(cd->dev, _CIPHDEV_CTRL_SYNC, buff);
+		default:
+			return cd->func_dev_ioctl(cd->dev, cmd, buff);
+	}
 }
 
 /* Attach de las funciones Callback */

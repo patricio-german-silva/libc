@@ -31,14 +31,15 @@ char openmode[] = "rb+";
 #define _OP_FILENAME_INDEX 3
 #define _OP_DATETIME_INDEX 4
 #define _OP_NEWKEY_INDEX 5
-#define _OP_USERDATA0_INDEX 6
-#define _OP_USERDATA1_INDEX 7
-#define _OP_USERDATA2_INDEX 8
-#define _OP_LOGLEVEL_INDEX 9
+#define _OP_AT_SLOT_INDEX 6
+#define _OP_USERDATA0_INDEX 7
+#define _OP_USERDATA1_INDEX 8
+#define _OP_USERDATA2_INDEX 9
+#define _OP_LOGLEVEL_INDEX 10
 
 // Command and ops list
 const char cmds[][12] = {"CREATE\0", "DUMP\0", "LOAD\0", "SETKEY\0", "DELKEY\0", "SETDATA\0", "SETDATETIME\0", "SETSIZE\0", "INFO\0"};
-const char ops[][12] = {"--SIZE\0", "--KEY\0", "--SLOT\0", "--FILENAME\0", "--DATETIME\0", "--NEWKEY\0", "--USERDATA0\0", "--USERDATA1\0", "--USERDATA2\0", "--LOGLEVEL\0"};
+const char ops[][12] = {"--SIZE\0", "--KEY\0", "--SLOT\0", "--FILENAME\0", "--DATETIME\0", "--NEWKEY\0", "--AT-SLOT\0", "--USERDATA0\0", "--USERDATA1\0", "--USERDATA2\0", "--LOGLEVEL\0"};
 
 // Usage comment
 const char usage[] = \
@@ -52,46 +53,48 @@ COMMANDS:\n\
   \t  Optional: --slot --datetime --userdata0 --userdata1 --userdata2 --loglevel\n\
   \n\
   \tdump: dumps de content of the block to stdout.\n\
-  \t  Requires: --filename --key\n\
-  \t  Optional: --loglevel\n\
+  \t  Requires: --filename --key --slot\n\
+  \t  Optional: --loglevel \n\
   \n\
   \tload: loads content from stdin into the block.\n\
-  \t  Requires: --filename --key\n\
-  \t  Optional: --loglevel\n\
+  \t  Requires: --filename --key --slot\n\
+  \t  Optional: --loglevel --slot\n\
   \n\
   \tsetkey: sets/add a new key to the block on the specified slot.\n\
-  \t  Requires: --filename --key --newkey --slot\n\
+  \t  Requires: --filename --key --slot --newkey --at-slot\n\
   \t  Optional: --loglevel\n\
   \n\
   \tdelkey: removes a key from de specified slot.\n\
-  \t  Requires: --filename --key --slot\n\
+  \t  Requires: --filename --key --slot --at-slot\n\
   \t  Optional: --loglevel\n\
   \n\
   \tsetdata: sets de user data stored on the block.\n\
-  \t  Requires: --filename --key [ --userdata0 | --userdata1 | --userdata2 ]\n\
-  \t  Optional: --loglevel\n\
+  \t  Requires: --filename --key --slot [ --userdata0 | --userdata1 | --userdata2 ]\n\
+  \t  Optional: --loglevel \n\
   \n\
   \tsetdatetime: sets the creation datetime.\n\
-  \t  Requires: --filename --key --datetime\n\
-  \t  Optional: --loglevel\n\
+  \t  Requires: --filename --key --slot --datetime\n\
+  \t  Optional: --loglevel \n\
   \n\
   \tsetsize: sets the size of the block, file size is not modified. It may\n\
   \t         corrupt your data if you shrink the block with a volume on it.\n\
-  \t  Requires: --filename --key --size\n\
-  \t  Optional: --loglevel\n\
+  \t  Requires: --filename --key --slot --size\n\
+  \t  Optional: --loglevel \n\
   \n\
-  \tinfo: displays data (sensitive) of the block .\n\
-  \t  Requires: --filename --key\n\
-  \t  Optional: --loglevel\n\
+  \tinfo: displays data (sensitive!) of the block.\n\
+  \t  Requires: --filename --key --slot\n\
+  \t  Optional: --loglevel \n\
   \n\
   \nOPTIONS:\
   \n\
-  \t--size: block size.\n\
+  \t--size: block size, in sectors of %d bytes\n\
   \t--key: key used to create/open a block.\n\
-  \t--slot: key slot to modify/delete.\n\
+  \t--slot: slot for the key. On create operation, if ommited, slot zero\n\
+  \t        will be used, there are a total of 10 slots to be used.\n\
   \t--filename: file where the block will be created/open.\n\
   \t--datetime: creation datetime for the block.\n\
   \t--newkey: new key to add to a specified slot.\n\
+  \t--at-slot: the slot of the key to add/delete.\n\
   \t--userdata0:\n\
   \t--userdata1:\n\
   \t--userdata2: user data to store on one of the tree 32-bit userdata fields.\n\
@@ -108,6 +111,7 @@ typedef struct{
   char filename[256];
   uint32_t size;
   uint32_t slot;
+  uint32_t at_slot;
   char key[256];
   char newkey[256];
   uint32_t datetime;
@@ -197,6 +201,7 @@ static uint8_t _parse_params(int argc, char *argv[]){
   curcmdsops.cmd = 255;
   curcmdsops.flags = 0;
   curcmdsops.slot = 0;
+  curcmdsops.at_slot = 0;
   curcmdsops.loglevel = _DEFAULT_LOG_LEVEL;
   curcmdsops.datetime = time(NULL);
   curcmdsops.user_data[0] = 0;
@@ -252,6 +257,10 @@ static uint8_t _parse_params(int argc, char *argv[]){
             case _OP_NEWKEY_INDEX:
                      if(_strcpy(c, curcmdsops.newkey, 255) == 0) return 10;
                      local_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "OPTION VALUE\0", curcmdsops.newkey, 0, 0);
+                     break;
+            case _OP_AT_SLOT_INDEX:
+                     if(_str_to_uint32(c, &(curcmdsops.at_slot), 2) > 1) return 8;
+                     local_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "OPTION VALUE\0", 0, (uint8_t*)&(curcmdsops.at_slot), 1);
                      break;
             case _OP_USERDATA0_INDEX:
             case _OP_USERDATA1_INDEX:
@@ -368,7 +377,7 @@ static uint8_t _show_block_info(){
 int main(int argc, char *argv[]){
   // At leas one param, the command
   if(argc < 2){
-    printf(usage, argv[0]);
+    printf(usage, argv[0], _CIPHDEV_SECTOR_SIZE);
     return 1;
   }
 
@@ -405,11 +414,11 @@ int main(int argc, char *argv[]){
 
     //Dump block content
     case _CMD_DUMP_INDEX:
-      required_opts = (1<<_OP_KEY_INDEX) | (1<<_OP_FILENAME_INDEX);
+      required_opts = (1<<_OP_KEY_INDEX) | (1<<_OP_FILENAME_INDEX) | (1<<_OP_SLOT_INDEX);
       local_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "REQUIERED OPTS (STRICT)\0", 0, (uint8_t*)&required_opts, 2);
 
       if(required_opts == curcmdsops.flags){ // Las opciones seteadas deben ser estrictamente las requeridas
-        command_ecod = ciphdev_initialize(&cd, 0, curcmdsops.key, _strlen(curcmdsops.key, 255));
+        command_ecod = ciphdev_initialize(&cd, 0, curcmdsops.key, _strlen(curcmdsops.key, 255), curcmdsops.slot);
         if(command_ecod == _CIPHDEV_STATUS_INIT)
           command_ecod = _dump_content_from_block();
       }else{
@@ -419,11 +428,11 @@ int main(int argc, char *argv[]){
 
     //Load raw data to block
     case _CMD_LOAD_INDEX:
-      required_opts = (1<<_OP_KEY_INDEX) | (1<<_OP_FILENAME_INDEX);
+      required_opts = (1<<_OP_KEY_INDEX) | (1<<_OP_FILENAME_INDEX) | (1<<_OP_SLOT_INDEX);
       local_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "REQUIERED OPTS (STRICT)\0", 0, (uint8_t*)&required_opts, 2);
 
       if(required_opts == curcmdsops.flags){ // Las opciones seteadas deben ser estrictamente las requeridas
-        command_ecod = ciphdev_initialize(&cd, 0, curcmdsops.key, _strlen(curcmdsops.key, 255));
+        command_ecod = ciphdev_initialize(&cd, 0, curcmdsops.key, _strlen(curcmdsops.key, 255), curcmdsops.slot);
         if(command_ecod == _CIPHDEV_STATUS_INIT)
           command_ecod = _load_data_to_block();
       }else{
@@ -433,13 +442,13 @@ int main(int argc, char *argv[]){
 
     // Set/add key
     case _CMD_SETKEY_INDEX:
-      required_opts = (1<<_OP_SLOT_INDEX) | (1<<_OP_KEY_INDEX) | (1<<_OP_FILENAME_INDEX) | (1<<_OP_NEWKEY_INDEX);
+      required_opts = (1<<_OP_SLOT_INDEX) | (1<<_OP_KEY_INDEX) | (1<<_OP_SLOT_INDEX) | (1<<_OP_FILENAME_INDEX) | (1<<_OP_NEWKEY_INDEX) | (1<<_OP_AT_SLOT_INDEX);
       local_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "REQUIERED OPTS (STRICT)\0", 0, (uint8_t*)&required_opts, 2);
 
       if(required_opts == curcmdsops.flags){ // Las opciones seteadas deben ser estrictamente las requeridas
-        command_ecod = ciphdev_initialize(&cd, 0, curcmdsops.key, _strlen(curcmdsops.key, 255));
+        command_ecod = ciphdev_initialize(&cd, 0, curcmdsops.key, _strlen(curcmdsops.key, 255), curcmdsops.slot);
         if(command_ecod == _CIPHDEV_STATUS_INIT)
-          command_ecod = ciphdev_addkey(&cd, curcmdsops.newkey, _strlen(curcmdsops.newkey, 255), curcmdsops.slot);
+          command_ecod = ciphdev_addkey(&cd, curcmdsops.newkey, _strlen(curcmdsops.newkey, 255), curcmdsops.at_slot);
       }else{
         local_debug(_CIPHDEV_LOG_LEVEL_WARN, "REQUIERED OPTS MISSING\0", 0, 0, 0);
       }
@@ -447,13 +456,13 @@ int main(int argc, char *argv[]){
 
     // Delete key
     case _CMD_DELKEY_INDEX:
-      required_opts = (1<<_OP_SLOT_INDEX) | (1<<_OP_KEY_INDEX) | (1<<_OP_FILENAME_INDEX);
+      required_opts = (1<<_OP_SLOT_INDEX) | (1<<_OP_KEY_INDEX) | (1<<_OP_FILENAME_INDEX) | (1<<_OP_AT_SLOT_INDEX);
       local_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "REQUIERED OPTS (STRICT)\0", 0, (uint8_t*)&required_opts, 2);
 
       if(required_opts == curcmdsops.flags){ // Las opciones seteadas deben ser estrictamente las requeridas
-        command_ecod = ciphdev_initialize(&cd, 0, curcmdsops.key, _strlen(curcmdsops.key, 255));
+        command_ecod = ciphdev_initialize(&cd, 0, curcmdsops.key, _strlen(curcmdsops.key, 255), curcmdsops.slot);
         if(command_ecod == _CIPHDEV_STATUS_INIT)
-          command_ecod = ciphdev_deletekey(&cd, curcmdsops.slot);
+          command_ecod = ciphdev_deletekey(&cd, curcmdsops.at_slot);
       }else{
         local_debug(_CIPHDEV_LOG_LEVEL_WARN, "REQUIERED OPTS MISSING\0", 0, 0, 0);
       }
@@ -461,12 +470,12 @@ int main(int argc, char *argv[]){
 
     // Set user data
     case _CMD_SETDATA_INDEX:
-      required_opts = (1<<_OP_KEY_INDEX) | (1<<_OP_FILENAME_INDEX);
+      required_opts = (1<<_OP_KEY_INDEX) | (1<<_OP_FILENAME_INDEX) | (1<<_OP_SLOT_INDEX);
       local_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "REQUIERED OPTS (AT LEAST)\0", 0, (uint8_t*)&required_opts, 2);
 
       if((required_opts & curcmdsops.flags) == required_opts){  // Puede haber otras opciones ademas de las requeridas
         if((((1<<_OP_USERDATA0_INDEX) | (1<<_OP_USERDATA1_INDEX) | (1<<_OP_USERDATA2_INDEX)) & curcmdsops.flags) != 0){
-          command_ecod = ciphdev_initialize(&cd, 0, curcmdsops.key, _strlen(curcmdsops.key, 255));
+          command_ecod = ciphdev_initialize(&cd, 0, curcmdsops.key, _strlen(curcmdsops.key, 255), curcmdsops.slot);
           if((curcmdsops.flags & (1<<_OP_USERDATA0_INDEX)) != 0) cd.user_data[0] = curcmdsops.user_data[0]; else cd.user_data[0] = 0;
           if((curcmdsops.flags & (1<<_OP_USERDATA1_INDEX)) != 0) cd.user_data[1] = curcmdsops.user_data[1]; else cd.user_data[1] = 0;
           if((curcmdsops.flags & (1<<_OP_USERDATA2_INDEX)) != 0) cd.user_data[2] = curcmdsops.user_data[2]; else cd.user_data[2] = 0;
@@ -482,11 +491,11 @@ int main(int argc, char *argv[]){
 
     // Set creation datetime
     case _CMD_SETDATETIME_INDEX:
-      required_opts = (1<<_OP_DATETIME_INDEX) | (1<<_OP_KEY_INDEX) | (1<<_OP_FILENAME_INDEX);
+      required_opts = (1<<_OP_DATETIME_INDEX) | (1<<_OP_KEY_INDEX) | (1<<_OP_FILENAME_INDEX) | (1<<_OP_SLOT_INDEX);
       local_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "REQUIERED OPTS (STRICT)\0", 0, (uint8_t*)&required_opts, 2);
 
       if(required_opts == curcmdsops.flags){ // Las opciones seteadas deben ser estrictamente las requeridas
-        command_ecod = ciphdev_initialize(&cd, 0, curcmdsops.key, _strlen(curcmdsops.key, 255));
+        command_ecod = ciphdev_initialize(&cd, 0, curcmdsops.key, _strlen(curcmdsops.key, 255), curcmdsops.slot);
         cd.datetime = curcmdsops.datetime;
         if(command_ecod == _CIPHDEV_STATUS_INIT)
           command_ecod = ciphdev_rewrite_header(&cd);
@@ -497,11 +506,11 @@ int main(int argc, char *argv[]){
 
     // Set block size (WARNING)
     case _CMD_SETSIZE_INDEX:
-      required_opts = (1<<_OP_SIZE_INDEX) | (1<<_OP_KEY_INDEX) | (1<<_OP_FILENAME_INDEX);
+      required_opts = (1<<_OP_SIZE_INDEX) | (1<<_OP_KEY_INDEX) | (1<<_OP_SLOT_INDEX) | (1<<_OP_FILENAME_INDEX);
       local_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "REQUIERED OPTS (STRICT)\0", 0, (uint8_t*)&required_opts, 2);
 
       if(required_opts == curcmdsops.flags){ // Las opciones seteadas deben ser estrictamente las requeridas
-        command_ecod = ciphdev_initialize(&cd, 0, curcmdsops.key, _strlen(curcmdsops.key, 255));
+        command_ecod = ciphdev_initialize(&cd, 0, curcmdsops.key, _strlen(curcmdsops.key, 255), curcmdsops.slot);
         cd.block_size = curcmdsops.size;
         if(command_ecod == _CIPHDEV_STATUS_INIT)
           command_ecod = ciphdev_rewrite_header(&cd);
@@ -512,11 +521,11 @@ int main(int argc, char *argv[]){
 
     // Show block Info
     case _CMD_INFO_INDEX:
-      required_opts = (1<<_OP_KEY_INDEX) | (1<<_OP_FILENAME_INDEX);
+      required_opts = (1<<_OP_KEY_INDEX) | (1<<_OP_FILENAME_INDEX) | (1<<_OP_SLOT_INDEX);
       local_debug(_CIPHDEV_LOG_LEVEL_DEBUG, "REQUIERED OPTS (STRICT)\0", 0, (uint8_t*)&required_opts, 2);
 
       if(required_opts == curcmdsops.flags){ // Las opciones seteadas deben ser estrictamente las requeridas
-        command_ecod = ciphdev_initialize(&cd, 0, curcmdsops.key, _strlen(curcmdsops.key, 255));
+        command_ecod = ciphdev_initialize(&cd, 0, curcmdsops.key, _strlen(curcmdsops.key, 255), curcmdsops.slot);
         if(command_ecod == _CIPHDEV_STATUS_INIT)
           command_ecod = _show_block_info();
       }else{

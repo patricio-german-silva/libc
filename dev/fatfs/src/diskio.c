@@ -15,6 +15,7 @@
 
 #define __USER_KEY "Heq3S52pJ"
 #define __USER_KEY_LEN 9
+#define __USER_KEY_SLOT 0
 #define __DEVICE_FILENAME "/home/psilva/dev.img"
 #define _DEFAULT_LOG_LEVEL 6
 #define _BLOCK_MAX_SIZE 4294967295 // En sectores, tamaño maximo es 2T on a 64 bit system
@@ -115,7 +116,7 @@ DSTATUS disk_initialize (
 )
 {
   _attach_all();
-  if(ciphdev_initialize(&cd, pdrv, __USER_KEY, __USER_KEY_LEN) == _CIPHDEV_STATUS_INIT)
+  if(ciphdev_initialize(&cd, pdrv, __USER_KEY, __USER_KEY_LEN, __USER_KEY_SLOT) == _CIPHDEV_STATUS_INIT)
     return 0;
   else
   	return STA_NOINIT;

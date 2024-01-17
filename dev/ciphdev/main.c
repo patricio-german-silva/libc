@@ -81,7 +81,7 @@ int main(){
   cd.user_data[2] = 702;
   cd.datetime = time(NULL);
 	printf("Create ecod: %d\n", ciphdev_create(&cd, 0, 1024*100*2, "laguagua", 8, 0));
-	printf("Initialize ecod: %d\n", ciphdev_initialize(&cd, 0, "laguagua", 8));
+	printf("Initialize ecod: %d\n", ciphdev_initialize(&cd, 0, "laguagua", 8, 0));
 	printf("add key ecod: %d\n", ciphdev_addkey(&cd, "watafucke", 9, 3));
 	//printf("delete key ecod: %d\n", ciphdev_deletekey(&cd, 0));
 
@@ -93,7 +93,7 @@ int main(){
   cd.user_data[2] = 228;
 	printf("rewrite header ecod: %d\n", ciphdev_rewrite_header(&cd));
 
-	printf("Initialize ecod: %d\n", ciphdev_initialize(&cd, 0, "watafucke", 9));
+	printf("Initialize ecod: %d\n", ciphdev_initialize(&cd, 0, "watafucke", 9, 3));
 
 	FILE *fpread = fopen("/home/psilva/read.txt" ,"r");
 	FILE *fpwrite = fopen("/home/psilva/write.txt" ,"w+");
@@ -118,7 +118,7 @@ int main(){
 		}
 	}
 
-	printf("Initialize ecod: %d\n", ciphdev_initialize(&cd, 0, "laguagua", 8));
+	printf("Initialize ecod: %d\n", ciphdev_initialize(&cd, 0, "laguagua", 8, 0));
 
 	for(uint32_t i = 0; i<scount; i++){
 		ciphdev_read(&cd, b, i, 1);

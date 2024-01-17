@@ -40,7 +40,7 @@
  *
  * @author Patricio Silva
  * @date Dec 21, 2023
- * @version 0.1.4
+ * @version 0.1.5
  */
 #ifndef CIPHDEV_H
 #define CIPHDEV_H
@@ -49,7 +49,7 @@
 #include "speck_sc.h"
 #include "stdint.h"
 
-#define _CIPHDEV_VERSION 1004
+#define _CIPHDEV_VERSION 1005
 #define _CIPHDEV_SECTOR_SIZE 512
 #define _CIPHDEV_RANDOMIZE_UNUSED
 
@@ -151,7 +151,7 @@ typedef struct{
 
 /* Crea un bloque cifrado cd en el dispositvo dev de un tamaño bs sectores
  * utilizando la frase de cifrado de usuario user_key de longitud len que se
- * almacenará en el slot index
+ * almacenará en el slot slot
  * @return 0 si el bloque se creó correctamente
  * @return 1 si el indice de slot no es valido
  * @return 2 si el device no se pudo inicializar
@@ -159,7 +159,7 @@ typedef struct{
  * @return 4 si fallo la escritura en el device
  * @return 5 si fallo la llamada ioctl a SYNC
  */
-uint8_t ciphdev_create (_ciphdev *cd, uint8_t dev, uint32_t bs, const char *user_key, uint8_t len, uint8_t index);
+uint8_t ciphdev_create (_ciphdev *cd, uint8_t dev, uint32_t bs, const char *user_key, uint8_t len, uint8_t slot);
 
 /* Agrega/sobreescribe una clave al bloque cifrado cd previamente inizializado
  * utilizando la frase de cifrado de usuario user_key de longitud len
@@ -170,19 +170,19 @@ uint8_t ciphdev_create (_ciphdev *cd, uint8_t dev, uint32_t bs, const char *user
  * @return 4 si el indice indicado esta fuera de rango
  * @return 5 si fallo la escritura en el device
  * @return 6 si fallo la llamada ioctl a SYNC */
-uint8_t ciphdev_addkey (_ciphdev *cd, const char *user_key, uint8_t len, uint8_t index);
+uint8_t ciphdev_addkey (_ciphdev *cd, const char *user_key, uint8_t len, uint8_t slot);
 
-/* borra la clave con indice indice index del bloque cifrado cd
+/* borra la clave en el slot slot del bloque cifrado cd
  * Retorna 0 la clave se borro correctamente
  * @return 1 si el bloque no fue inicializado
  * @return 2 si el indice esta fuer ade rango
  * @return 3 si fallo la escritura en el device
  * @return 4 si fallo la llamada ioctl a SYNC */
-uint8_t ciphdev_deletekey (_ciphdev *cd, uint8_t index);
+uint8_t ciphdev_deletekey (_ciphdev *cd, uint8_t slot);
 
 /* Inicializa (abre) el bloque cifrado
  * Retorna el estado actual */
-uint8_t ciphdev_initialize (_ciphdev *cd, uint8_t dev, const char *user_key, uint8_t len);
+uint8_t ciphdev_initialize (_ciphdev *cd, uint8_t dev, const char *user_key, uint8_t len, uint8_t slot);
 
 /* Retorna el estado actual */
 uint8_t ciphdev_status (_ciphdev *cd);
