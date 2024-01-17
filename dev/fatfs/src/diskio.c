@@ -15,7 +15,7 @@
 
 #define __USER_KEY "Heq3S52pJ"
 #define __USER_KEY_LEN 9
-#define __DEVICE_FILENAME "dev.img"
+#define __DEVICE_FILENAME "/home/psilva/dev.img"
 #define _DEFAULT_LOG_LEVEL 6
 #define _BLOCK_MAX_SIZE 4294967295 // En sectores, tamaño maximo es 2T on a 64 bit system
 

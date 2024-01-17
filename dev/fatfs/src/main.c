@@ -22,7 +22,7 @@ int main(int argc, char *argv[]){
     f_mount(&FatFs, "", 0);
 
     /* Open a text file */
-    fr = f_open(&fil, "newe.txt", FA_READ);
+    fr = f_open(&fil, "message.txt", FA_READ);
     if (fr) return (int)fr;
 
     /* Read every line and display it */
@@ -35,7 +35,17 @@ int main(int argc, char *argv[]){
     fr = f_open(&fil, "newe.txt", FA_CREATE_ALWAYS | FA_WRITE | FA_READ);
     if (fr) return (int)fr;
     f_puts("Specifies write access to the file. Data can be written to the file. Combine with FA_READ for read-write access.\0", &fil);
-    f_puts("The input Unicode characters in multiple encoding unit, such as surrogate pair and multi-byte sequence.\0", &fil);
+    f_puts("The input Unicode characters in multiple encoding unit, such as surrogate pair and multi-byte sequence.\n\0", &fil);
+    f_close(&fil);
+    /* Open a text file */
+    fr = f_open(&fil, "newe.txt", FA_READ);
+    if (fr) return (int)fr;
+
+    /* Read every line and display it */
+    while (f_gets(line, sizeof line, &fil)) {
+        printf(line);
+    }
+
     f_close(&fil);
     return 0;
 }

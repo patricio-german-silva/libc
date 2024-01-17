@@ -4,6 +4,9 @@
  *  Created on: Dec 5, 2022
  *      Author: psilva
  *
+ *  Updated on: Dec 19, 2023
+ * Version: 2
+ *
  *	Fuentes en formato C uint8_t array y funciones para su manejo
  *
  *
@@ -30,17 +33,21 @@
 #define INC_FONTS_H_
 
 /* FUENTES EN USO */
-//#define _FONTS_USE_ARIAL_14
-//#define _FONTS_USE_CALLIBRI_10
-//#define _FONTS_USE_VERDANA_12
-//#define _FONTS_USE_TIMES_NEW_ROMAN_16
-//#define _FONTS_USE_COOPER_26
 #define _FONTS_USE_MINI_8
+#define _FONTS_USE_ARIAL_14
+//#define _FONTS_USE_CALLIBRI_10
+#define _FONTS_USE_VERDANA_12
+//#define _FONTS_USE_TIMES_NEW_ROMAN_16
+#define _FONTS_USE_COOPER_26
 //#define _FONTS_USE_MINI_MONO_8
 
 #include <stdint.h>
 
-
+typedef struct{
+    const uint8_t *font;
+    char on_char;
+    uint16_t starts_at;
+}_fontbuff;
 
 #ifdef _FONTS_USE_ARIAL_14
 
@@ -772,7 +779,7 @@ static const uint8_t _font_mini8[] = {
     0x07, 0x0a, 0x08, 0x05, 0x05, 0x0e, 0x05, 0x01, 0x05, 0x07,
     0x09, 0x08,
 
-    // font data
+	// font data
     0x00, 0x00,
     0x2e,
     0x06, 0x00, 0x06,
@@ -946,7 +953,7 @@ static const uint8_t _font_mini_mono8[] = {
     0x07, 0x0a, 0x08, 0x05, 0x05, 0x0e, 0x05, 0x01, 0x05, 0x07,
     0x09, 0x08,
 
-    // font data
+	// font data
     0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x2e, 0x00, 0x00,
     0x00, 0x06, 0x00, 0x06, 0x00,

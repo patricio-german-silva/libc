@@ -8,6 +8,9 @@
 #include "stdint.h"
 #include "fonts.h"
 
+/*Buffer temporal para la posición de un caracter en la fuente*/
+_fontbuff buff;
+
 // Retorna el primer caracter que maneja la fuente, usualemnte 32 (espacio en blanco)
 uint8_t _fonts_get_first_char(const uint8_t *font){
 	return font[4];
@@ -43,12 +46,17 @@ uint8_t _fonts_get_char_width(const uint8_t *font, char on_char){
 
 // Posicion en el array font donde inicia el caracter indicado
 uint16_t _fonts_get_char_starts_at(const uint8_t *font, char on_char){
-    uint16_t pos = font[5] + 6; // Salteo header y bloque de anchos de fuente
-    uint8_t bytes_per_column = _fonts_get_bytes_per_column(font);
+    if(buff.on_char != on_char || buff.font != font){
+        uint16_t pos = font[5] + 6; // Salteo header y bloque de anchos de fuente
+        uint8_t bytes_per_column = _fonts_get_bytes_per_column(font);
 
-    for(uint8_t i = 0; i < (uint8_t)on_char - font[4]; i++)
-        pos+= (font[i+6]*bytes_per_column);
-    return pos;
+        for(uint8_t i = 0; i < (uint8_t)on_char - font[4]; i++)
+            pos+= (font[i+6]*bytes_per_column);
+        buff.font = font;
+        buff.on_char = on_char;
+        buff.starts_at = pos;
+    }
+    return buff.starts_at;
 }
 
 // Un byte de datos de la fuente, columna indicada (0..whidth) y bits de offset de arriba hacia abajo (una fuente de tamaño 14 tiene offset entre 0 y 13)

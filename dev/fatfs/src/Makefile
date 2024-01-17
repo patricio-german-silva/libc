@@ -16,10 +16,10 @@ CFLAGS  = -Wall -I$(IDIR)
 TARGET = fatfstest
 
 # Files with no headers, like main.c
-SRCS = main.c
+SRCS = main.c ffunicode.c
 
 # Dependency files
-_DEPS = md5.h ciphdev.h speck.h ff.h diskio.h
+_DEPS = md5.h ciphdev.h speck_sc.h ff.h diskio.h
 _OBJ = $(_DEPS:.h=.o)
 
 # Directories
