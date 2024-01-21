@@ -19,7 +19,7 @@ TARGET = fatfstest
 SRCS = main.c ffunicode.c
 
 # Dependency files
-_DEPS = md5.h ciphdev.h speck_sc.h ff.h diskio.h
+_DEPS = md5.h ciphdev.h speck_sc.h ff.h diskio.h strutil.h
 _OBJ = $(_DEPS:.h=.o)
 
 # Directories
