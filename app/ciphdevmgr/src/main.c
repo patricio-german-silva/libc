@@ -13,6 +13,7 @@
 // Descriptor File to read/write and other related data
 FILE *fp = NULL;
 char openmode[] = "rb+";
+uint8_t buffer[512];
 
 // El indice debe coincidir con la clave del array
 #define _CMD_CREATE_INDEX 0
@@ -282,6 +283,7 @@ static uint8_t _parse_params(int argc, char *argv[]){
 
 // Preparo el struct cd
 static void _attach_all(){
+	ciphdev_attach_buffer(&cd, buffer);
 	ciphdev_attach_random(&cd, &local_rand);
 	ciphdev_attach_debug(&cd, &local_debug);
 	ciphdev_attach_dev_read(&cd, &local_read);
