@@ -23,6 +23,7 @@
 // Descriptor File to read/write and other related data
 FILE *fp = NULL;
 char openmode[] = "rb+";
+uint8_t buf[1024];
 
 
 // Prototipos
@@ -86,6 +87,7 @@ static void local_debug(uint8_t level, const char *msg, const char *charg, const
 // Preparo el struct cd
 static void _attach_all(){
 	ciphdev_attach_debug(&cd, &local_debug);
+	ciphdev_attach_buffer(&cd, buf);
 	ciphdev_attach_dev_read(&cd, &local_read);
 	ciphdev_attach_dev_write(&cd, &local_write);
 	ciphdev_attach_dev_ioctl(&cd, &local_ioctl);

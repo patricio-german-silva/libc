@@ -2,10 +2,7 @@
 #include <stdio.h>
 
 
-
-int main(){
-	char a[] = {'h','o','l','a', 0};
-	char c[] = "hola";
-	char *b = a;
-	printf("%s", a);
+int main() {
+	register uint8_t i = 0;
+	i++;
 }

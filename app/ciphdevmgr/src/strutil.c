@@ -92,6 +92,46 @@ uint8_t _str_to_int32(const char *str, int32_t *number, uint8_t max_digits){
 
 
 /*
+ * Convierte *str de dos caracteres representando un hexadecimal en su valor numerico
+ * @param *str cadena a convertir
+ * @param *number es el resultado
+ * @result retorna 1 si se convirtió correctamente, 0 en caso contrario
+ */
+uint8_t _hex_to_uint8(const char *str, uint8_t *number){
+	*number = 0;
+	uint8_t despl = 4;
+	for (uint8_t i = 0; i < 2; i++) {
+		if(str[i] >= '0' && str[i]<='9')
+			*number |= ((str[i]-'0')<<despl);
+		else if(str[i] >= 'a' && str[i]<='f')
+			*number |= ((str[i]-'a'+10)<<despl);
+		else if(str[i] >= 'A' && str[i]<='F')
+			*number |= ((str[i]-'A'+10)<<despl);
+		else
+			return 0;
+		despl = 0;
+	}
+	return 1;
+}
+
+/*
+ * Convierte number en su valor hexadecimal de dos digitos
+ * @param *number es el numero a convertir
+ * @param *str cadena que representa el hexadecimal
+ */
+void _uint8_to_hex(const uint8_t *number, char *str){
+	if((*number>>4) < 10)
+		str[0] = (*number>>4)+'0';
+	else
+		str[0] = (*number>>4)+'a'-10;
+	if((*number&15) < 10)
+		str[1] = (*number&15)+'0';
+	else
+		str[1] = (*number&15)+'a'-10;
+}
+
+
+/*
  * copia el string src terminado en \0 en dst terminado en \0
  * @param max: maxima cantidad de caracteres que se van a escribir en dst (incluido el '\0')
  * @result retorna la cantidad de caracteres copiados, sin contar el \0

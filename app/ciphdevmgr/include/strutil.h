@@ -10,13 +10,15 @@
  *
  *
  * Utilidades básicas de manejo de string:
- * 							_strcpy
- * 							_uint32_to_str
- * 							_str_to_uint32
- * 							_strlen
- * 							_cut
- * 							_strcmp
- * 							_touppercase
+ *								_uint32_to_str
+ *								_int32_to_str
+ *								_str_to_uint32
+ *								_hex_to_uint8
+ *								_uint8_to_hex
+ *								_strcpy
+ *								_strlen
+ *								_cut
+ *								_strcmp
  */
 #ifndef INC_STRUTIL_H_
 #define INC_STRUTIL_H_
@@ -48,13 +50,19 @@ uint8_t _int32_to_str(int32_t number, char *str);
 uint8_t _str_to_uint32(const char *str, uint32_t *number, uint8_t max_digits);
 
 /*
- * Convierte *str en su valor numerico
- * @param *str cadena a convertir, la cadena puede contener un signo - al inicio y es finalizada en cualquier caracter que no sea numerico, idealmente '\0'
+ * Convierte *str de dos caracteres representando un hexadecimal en su valor numerico
+ * @param *str cadena a convertir
  * @param *number es el resultado
- * @param max_digits la maxima cantidad de digitos
- * @result retorna la cantidad de caracteres convertidos sin contar el '-' (si lo hubiera), 0 significa que falló la conversion
+ * @result retorna 1 si se convirtió correctamente, 0 en caso contrario
  */
-uint8_t _str_to_int32(const char *str, int32_t *number, uint8_t max_digits);
+uint8_t _hex_to_uint8(const char *str, uint8_t *number);
+
+/*
+ * Convierte number en su valor hexadecimal de dos digitos
+ * @param *number es el numero a convertir
+ * @param *str cadena que representa el hexadecimal
+ */
+void _uint8_to_hex(const uint8_t *number, char *str);
 
 /*
  * copia el string src terminado en \0 en dst terminado en \0

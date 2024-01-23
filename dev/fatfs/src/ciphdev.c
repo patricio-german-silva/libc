@@ -547,6 +547,11 @@ uint8_t ciphdev_ioctl (_ciphdev *cd, uint8_t cmd, uint32_t *buff){
 	}
 }
 
+/* Setea el buffer de trabajo, minimo 512 bytes */
+void ciphdev_attach_buffer(_ciphdev *cd, uint8_t *b){
+	cd->buff_u8 = b;
+}
+
 /* Attach de las funciones Callback */
 void ciphdev_attach_dev_initialize(_ciphdev *cd, ciphdev_dev_initialize_def f){
 	cd->func_dev_initialize = f;

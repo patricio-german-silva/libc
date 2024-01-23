@@ -1,6 +1,18 @@
 /**
+ * File: ciphdev.h
+ *
  * ciphdev permite crear y mantener un bloque cifrado mediante el algoritmo
  * criptografico de bloque SPECK 64/128 y modo de operación CBC.
+ *
+ * Está diseñado para operar en dispositivos con poca capacidad de memoria y
+ * procesamiento como ser un microcontrolador de 32bits. Las funciones basicas
+ * no requieren ninguna libreria extra.
+ * Para crear un bloque desde cero es necesario contar con capacidad para 
+ * generar numeros pseudo-aleatorios, por esto lo habitual es crear el bloque
+ * en una PC y cargarle la imagen de un sistema de archivos para luego accederlo
+ * desde el microcontrolador. Utiliza un buffer de 512bytes que debe asignarse
+ * externamente, por lo que puede ser un buffer compartido entre otras
+ * aplicaciónes del microcontrolador.
  *
  * La clave de cifrado SPECK es creada durante la inicialización y se almacena
  * cifrada utilizando las claves de usuario y el numero de slot como vector de
@@ -135,8 +147,8 @@ typedef struct{
 
 	// Buffer
 	union{
-		uint32_t buff_u32[128];
-		uint8_t buff_u8[512];
+		uint32_t *buff_u32;
+		uint8_t *buff_u8;
 	};
 
   // Funciones Callback
@@ -213,6 +225,9 @@ uint8_t ciphdev_rewrite_header (_ciphdev *cd);
 
 /* ioctl, retorna valor segun el comando cmd */
 uint8_t ciphdev_ioctl (_ciphdev *cd, uint8_t cmd, uint32_t *buff);
+
+/* Setea el buffer de trabajo, minimo 512 bytes */
+void ciphdev_attach_buffer(_ciphdev *cd, uint8_t *b);
 
 /* Attach de las funciones Callback */
 void ciphdev_attach_dev_initialize(_ciphdev *cd, ciphdev_dev_initialize_def f);
