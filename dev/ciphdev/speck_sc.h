@@ -1,9 +1,9 @@
 /**
  * Speck Stream Cipher implementation
  *
- * This module incorporates a stream cipher based on the speck block cipher and
- * Cipher block chaining (CBC) mode of operation. The incialization vector must
- * be provided in the initialization proccess.
+ * This module implements a stream cipher based on the speck block cipher 
+ * algorithm and Cipher block chaining (CBC) mode of operation.
+ * The incialization vector must be provided in the initialization proccess.
  *
  * At the risk of being pedantic, it is clear that you cannot mix encryption
  * and decryption in the same initialization.

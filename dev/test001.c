@@ -16,10 +16,10 @@ static uint8_t _to_str(uint16_t number, char *str){
 	} while (number > 0);
 
 	do{
-		ptr++;	// its ok
+		ptr+=1;	// its ok
 		*str = *ptr;
-		str++;
-		i++;
+		str+=1;
+		i+=1;
 	} while(*ptr);
 	return i-1;	// No cuento el \0
 }
