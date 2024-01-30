@@ -190,7 +190,7 @@ static void _md5_step(uint32_t *buffer, uint32_t *input){
  * Example:
  *
 int main(){
-    	_md5_context ctx;
+	_md5_context ctx;
 	md5_init(&ctx);
 
 	md5_update(&ctx, "Hello ", 6);
@@ -198,9 +198,9 @@ int main(){
 	md5_update(&ctx, "!", 1);
 
 	md5_finalize(&ctx);
-        for(uint8_t i = 0; i<16; i++)
-            printf("%02x", ctx.digest[i]);
-    return 0;
+	for(uint8_t i = 0; i<16; i++)
+		printf("%02x", ctx.digest[i]);
+	return 0;
 }
 
 * Output: ed076287532e86365e841e92bfc50d8c
