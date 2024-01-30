@@ -30,6 +30,14 @@
  * los que se pueden mostrar horizontalmente se hace scroll automatico, Si hay mas lineas de las que se
  * pueden mostrar se hace scroll vertical, Si suceden ambos casos se hacen scroll horizontal primero y luego vertical
  * Las lineas establecidas como fijas no hacen scroll horizontal, si vertical
+ * Se pueden setear cada cuantos ms se actualiza la pantalla para hacer scroll con _SSD1306_AUTOSCROLL_TIME_MS
+ * El tiempo de espera de una linea nueva antes de comenzar a hacer scrolls se setea con _SSD1306_AUTOSCROLL_SLEEP_MS.
+ * La cantidad de pixeles que se hace scroll se setea con _SSD1306_AUTOSCROLL_PX_VERTICAL y _SSD1306_AUTOSCROLL_PX_HORIZONTAL
+ * y el comportamiento luego de un freeze con _SSD1306_AUTOSCROLL_ON_UPDATE_RESUME, seteado a 1 el scroll
+ * vuelve a 0 tras un unfreeze.
+ * IMPORTANTE: Tras cargar informacion a mostrar se debe llamar al menos una vez a ssd1306_i2c_update
+ * para que se actualice los valores de ancho y alto del displey de modo de poder determinar cuanto scroll
+ * debe hacerse.
  *
  * _SSD1306_MODE_TEXT_CONSOLE
  *

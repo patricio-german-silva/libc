@@ -40,6 +40,10 @@ static const uint8_t *_available_fonts[] = {
 #ifdef _FONTS_USE_COOPER_26
         _font_cooper26,
 #endif
+
+#ifdef _FONTS_USE_TETRIS_8
+        _font_tetris8,
+#endif
 };
 
 

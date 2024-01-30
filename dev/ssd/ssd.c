@@ -138,20 +138,20 @@ int main(){
 
   ssd1306_i2c_init(&ssd1306, _SSD1306_I2C_ADDRESS, __cols, __rows);
   ssd1306_i2c_attach_send_data(&ssd1306, ssd_send_data);
-  //ssd1306_i2c_set_mode(&ssd1306, _SSD1306_MODE_TEXT_AUTOSCROLL);
-  ssd1306_i2c_set_mode(&ssd1306, _SSD1306_MODE_TEXT_CONSOLE);
+  ssd1306_i2c_set_mode(&ssd1306, _SSD1306_MODE_TEXT_AUTOSCROLL);
+  //ssd1306_i2c_set_mode(&ssd1306, _SSD1306_MODE_TEXT_CONSOLE);
   //ssd1306_i2c_set_mode(&ssd1306, _SSD1306_MODE_EXTERNAL_BITMAP);
   //ssd1306_i2c_set_mode(&ssd1306, _SSD1306_MODE_BITMAP);
   //ssd1306_i2c_set_exteral_bitmap(&ssd1306, data);
   // ssd1306_i2c_put_text(_ssd1306_i2c *ssd, const char *data, uint8_t at_line, uint8_t font, uint8_t fixed, uint8_t spacing)
   //uint8_t value[] = {128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 0};
   //ssd1306_i2c_put_text(&ssd1306, value, 0, 5, 1, 1);
-  //ssd1306_i2c_put_text(&ssd1306, "Texto con scroll y fuente grande\0", 1, 4, 0, 1);
-  //ssd1306_i2c_put_text(&ssd1306, "Linea inferior, fuente pequena\0", 2, 1, 1, 1);
+  ssd1306_i2c_put_text(&ssd1306, "Texto con scroll y fuente grande\0", 1, 4, 0, 1);
+  ssd1306_i2c_put_text(&ssd1306, "Linea inferior, fuente pequena\0", 2, 1, 1, 1);
   //ssd1306_i2c_bitmap_draw_line(&ssd1306, 3, 5, 100, 40);
-  //ssd1306_i2c_update(&ssd1306);
+  ssd1306_i2c_update(&ssd1306);
   mytimer_init(999);
   mytimer_attach(callback_func, 1);
-  mytimer_attach(callback_func_draw, 1000);
+//  mytimer_attach(callback_func_draw, 1000);
   while(1);
 }

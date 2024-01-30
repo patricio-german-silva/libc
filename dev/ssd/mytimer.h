@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-
+/* Number of available timers */
 #define _MYTIMER_CALLBACK_NUM 10
 
 typedef void (*_mytimer_callback_f)();

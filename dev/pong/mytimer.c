@@ -64,20 +64,27 @@ int8_t mytimer_dettach(_mytimer_callback_f t){
 }
 
 /*
+ *  USAGE Example
+ *  */
+/*
+
+
 void on_timer1(){
-	write(1, "Hi!, 1/n", 7);
+	write(1, "Hi!, Im timer 1 every 1200ms\n", 29);
 }
 
 void on_timer2(){
-	write(1, "Hi!, 2/n", 7);
+	write(1, "Hi!, Im timer 2 every 500ms\n", 28);
 }
 
 
 
 int main(){
 	mytimer_init(99999);
-	printf("Timer 1 on %d", mytimer_attach(on_timer1, 15));
+	printf("Timer 1 on %d", mytimer_attach(on_timer1, 12));
 	printf("Timer 2 on %d", mytimer_attach(on_timer2, 5));
 	while(1);
 	return 0;
-}*/
+}
+
+*/

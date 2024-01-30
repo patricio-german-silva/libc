@@ -3,8 +3,8 @@
  *
  *  Created on: Dec 3, 2022
  *      Author: psilva
- *
- * Version: 2
+ *  Updated on: Mar 19, 2023
+ * Version: 16
  *
  * Driver para el controlador de display OLED PLED ssd1306
  *
@@ -30,6 +30,14 @@
  * los que se pueden mostrar horizontalmente se hace scroll automatico, Si hay mas lineas de las que se
  * pueden mostrar se hace scroll vertical, Si suceden ambos casos se hacen scroll horizontal primero y luego vertical
  * Las lineas establecidas como fijas no hacen scroll horizontal, si vertical
+ * Se pueden setear cada cuantos ms se actualiza la pantalla para hacer scroll con _SSD1306_AUTOSCROLL_TIME_MS
+ * El tiempo de espera de una linea nueva antes de comenzar a hacer scrolls se setea con _SSD1306_AUTOSCROLL_SLEEP_MS.
+ * La cantidad de pixeles que se hace scroll se setea con _SSD1306_AUTOSCROLL_PX_VERTICAL y _SSD1306_AUTOSCROLL_PX_HORIZONTAL
+ * y el comportamiento luego de un freeze con _SSD1306_AUTOSCROLL_ON_UPDATE_RESUME, seteado a 1 el scroll
+ * vuelve a 0 tras un unfreeze.
+ * IMPORTANTE: Tras cargar informacion a mostrar se debe llamar al menos una vez a ssd1306_i2c_update
+ * para que se actualice los valores de ancho y alto del displey de modo de poder determinar cuanto scroll
+ * debe hacerse.
  *
  * _SSD1306_MODE_TEXT_CONSOLE
  *
@@ -89,7 +97,7 @@
  * aborta toda comunicación con el dispositico I2C
  */
 #define _SSD1306_DMA_BUFFER_SIZE									32
-#define _SSD1306_DMA_BUFFER_MAX_PKG									17
+#define _SSD1306_DMA_BUFFER_MAX_PKG									32
 #define _SSD1306_DMA_I2C_TX_MAX_ERRORS								10
 
 /*
@@ -104,10 +112,12 @@
 /*
  * Configuracion del autoscroll
  */
-#define _SSD1306_AUTOSCROLL_TIME_MS    								500
+#define _SSD1306_AUTOSCROLL_TIME_MS    								1500
 #define _SSD1306_AUTOSCROLL_SLEEP_MS   								2000
-#define _SSD1306_AUTOSCROLL_PX_VERTICAL								10
-#define _SSD1306_AUTOSCROLL_PX_HORIZONTAL   						5
+#define _SSD1306_AUTOSCROLL_PX_VERTICAL								12
+#define _SSD1306_AUTOSCROLL_PX_HORIZONTAL   						10
+#define _SSD1306_AUTOSCROLL_ON_UPDATE_RESUME                        1
+
 
 /*
  * Configuracion de consola
@@ -172,44 +182,56 @@ typedef uint8_t (*transmit_to_display_def)(uint16_t i2c_address, uint8_t *pData,
  * display_update = 5: Mover punteros a (0,0) y luego pasar a display_update = 2
  * display_update = 6: Mover punteros a (0,0) y luego pasar a display_update = 3
  * display_update = 7: Mover punteros a (0,0) y luego pasar a display_update = 4
+ * display_freeze = 0: El display se actualiza normalmente
+ * display_freeze = 1: El display no se actualiza
  * display_curr_column: siguiente columna a dibujar (0..display_columns-1)
  * display_curr_page: siguiente pagina a dibujar (0..(display_rows/8)-1)
+ *
+ * set_options = 0: no aplicar cambios
+ * set_options = 0b1____000: display normal
+ * set_options = 0b_1___000: inverse
+ * set_options = 0b__1__000: rotado 180º
+ * set_options = 0b___1_000: rotado 0º
+ * set_options = 0b____1000: Aplicar curr_conntrast
  * */
 typedef struct{
-	// Configuracion
-	uint16_t i2c_address;
-	uint8_t display_pages;	// rows/8
-	uint8_t display_columns;
-	uint8_t mode;	 // default _SSD1306_MODE_TEXT
+    // Configuracion
+    uint16_t i2c_address;
+    uint8_t display_pages;	// rows/8
+    uint8_t display_columns;
+    uint8_t mode;	 // default _SSD1306_MODE_TEXT
 
-	// Buffers
-	uint8_t dma_buffer[_SSD1306_DMA_BUFFER_SIZE];
-	uint8_t dma_bf_iw;
-	uint8_t data_buffer[_SSD1306_DEFAULT_TEXT_ROWS][_SSD1306_DEFAULT_TEXT_COLUMNS];
-	const uint8_t *extern_bitmap;	// Un mapa de bits provisto externamente, el tamaño debe ser  display_rows * display_columns
+    // Buffers
+    uint8_t dma_buffer[_SSD1306_DMA_BUFFER_SIZE];
+    uint8_t dma_bf_iw;
+    uint8_t data_buffer[_SSD1306_DEFAULT_TEXT_ROWS][_SSD1306_DEFAULT_TEXT_COLUMNS];
+    const uint8_t *extern_bitmap;	// Un mapa de bits provisto externamente, el tamaño debe ser  display_rows * display_columns
 
-	// Estado
-	uint8_t dma_status;
-	uint8_t display_update;
-	uint8_t display_curr_column;	// Columna actual en la que se esta escribiendo en el display
-	uint8_t display_curr_page;		// Pagina actual en la que se esta escribiendo en el display
+    // Estado
+    uint8_t dma_status;
+    uint8_t display_update;
+    uint8_t display_freeze;
+    uint8_t display_curr_column;	// Columna actual en la que se esta escribiendo en el display
+    uint8_t display_curr_page;		// Pagina actual en la que se esta escribiendo en el display
     // offset entre los datos y dispay, en modo texto representa la ubicacion
-	// del display respecto a los datos, los datos son mas grandes que el display
+    // del display respecto a los datos, los datos son mas grandes que el display
     uint16_t vd_hoffset;
     uint16_t vd_voffset;
     uint16_t vd_hmax;
     uint16_t vd_vmax;
-	uint8_t display_on;
+    uint8_t display_on;
     uint16_t scroll_cnrt;
     uint8_t console_cur_line;
+    uint8_t set_options; // / Si != 0 -> aplicar el cambio en el siguiente envio de comandos
+    uint8_t curr_conntrast;  // contraste actual
 
-	uint32_t TX_errors;
-	uint32_t TX_sent;
+    uint32_t TX_errors;
+    uint32_t TX_sent;
 
-	/* Funcion de escritura de datos fuera de la libreria. Esta funcion debe devolver 1 cuando la transmision es correcta y 0 en caso contrario
-	 * de otro modo se alcanzará el timeout y se suspenderá la comunicacion con el dispositivo
-	 */
-	transmit_to_display_def send_data;
+    /* Funcion de escritura de datos fuera de la libreria. Esta funcion debe devolver 1 cuando la transmision es correcta y 0 en caso contrario
+     * de otro modo se alcanzará el timeout y se suspenderá la comunicacion con el dispositivo
+     */
+    transmit_to_display_def send_data;
 }_ssd1306_i2c;
 
 
@@ -233,16 +255,25 @@ uint8_t ssd1306_i2c_set_display_off(_ssd1306_i2c *ssd);
 uint8_t ssd1306_i2c_is_display_on(_ssd1306_i2c *ssd);
 
 // Envia comando de ajuste de contraste
-uint8_t ssd1306_i2c_set_conntrast(_ssd1306_i2c *ssd, uint8_t conntrast);
+void ssd1306_i2c_set_conntrast(_ssd1306_i2c *ssd, uint8_t conntrast);
 
 // Envia comando de seteo pantalla normal, 1=white pixel, 0=black pixel y rotacion de pantalla 0 grados
-uint8_t ssd1306_i2c_set_normal(_ssd1306_i2c *ssd);
+void ssd1306_i2c_set_normal(_ssd1306_i2c *ssd);
 
 // Envia comando de seteo pantalla inverse, 1=black pixel, 0=white pixel
-uint8_t ssd1306_i2c_set_inverse(_ssd1306_i2c *ssd);
+void ssd1306_i2c_set_inverse(_ssd1306_i2c *ssd);
+
+// Rotacion de pantalla 0 grados
+void ssd1306_i2c_set_rotate_0(_ssd1306_i2c *ssd);
 
 // Rotacion de pantalla 180 grados
-uint8_t ssd1306_i2c_set_rotate_180(_ssd1306_i2c *ssd);
+void ssd1306_i2c_set_rotate_180(_ssd1306_i2c *ssd);
+
+// Desabilitar update automatico del display
+void ssd1306_i2c_freeze(_ssd1306_i2c *ssd);
+
+// Rehabilitar update automatico del display
+void ssd1306_i2c_unfreeze(_ssd1306_i2c *ssd);
 
 // Attach de una funcion que recibe una direccion i2c, un array de datos y un tamaño
 void ssd1306_i2c_attach_send_data(_ssd1306_i2c *ssd, transmit_to_display_def f);
@@ -261,6 +292,15 @@ void ssd1306_i2c_add_text(_ssd1306_i2c *ssd, const char *data, uint8_t at_line);
 
 // Agrega el caracter a la linea especificada, al final del texto ya existente
 void ssd1306_i2c_add_char(_ssd1306_i2c *ssd, const char data, uint8_t at_line);
+
+// Setea la fuente de la linea especificada
+void ssd1306_i2c_set_font(_ssd1306_i2c *ssd, uint8_t at_line, uint8_t font);
+
+// Setea el espaciado de la linea especificada
+void ssd1306_i2c_set_spacing(_ssd1306_i2c *ssd, uint8_t at_line, uint8_t spacing);
+
+// Setea si la linea especificada es fija o no
+void ssd1306_i2c_set_fixed(_ssd1306_i2c *ssd, uint8_t at_line, uint8_t fixed);
 
 // Limpia de texto la linea especificada
 void ssd1306_i2c_clean_text(_ssd1306_i2c *ssd, uint8_t at_line);
