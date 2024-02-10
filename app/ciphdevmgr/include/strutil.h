@@ -14,7 +14,9 @@
  *								_int32_to_str
  *								_str_to_uint32
  *								_hex_to_uint8
+ *								_hex_to_uint32
  *								_uint8_to_hex
+ *								_uint32_to_hex
  *								_strcpy
  *								_strlen
  *								_cut
@@ -58,11 +60,26 @@ uint8_t _str_to_uint32(const char *str, uint32_t *number, uint8_t max_digits);
 uint8_t _hex_to_uint8(const char *str, uint8_t *number);
 
 /*
+ * Convierte *str de ocho caracteres representando un hexadecimal en su valor numerico
+ * @param *str cadena a convertir
+ * @param *number es el resultado
+ * @result retorna 1 si se convirtió correctamente, 0 en caso contrario
+ */
+uint8_t _hex_to_uint32(const char *str, uint32_t *number);
+
+/*
  * Convierte number en su valor hexadecimal de dos digitos
  * @param *number es el numero a convertir
  * @param *str cadena que representa el hexadecimal
  */
 void _uint8_to_hex(const uint8_t *number, char *str);
+
+/*
+ * Convierte number en su valor hexadecimal de 8 caracteres
+ * @param *number es el numero a convertir
+ * @param *str cadena que representa el hexadecimal
+ */
+void _uint32_to_hex(const uint32_t *number, char *str);
 
 /*
  * copia el string src terminado en \0 en dst terminado en \0

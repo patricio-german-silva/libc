@@ -19,14 +19,14 @@ uint8_t _uint32_to_str(uint32_t number, char *str){
     do {
         *ptr += number % 10;
         number /= 10;
-        ptr--;
+        ptr-=1;
     } while (number > 0);
 
     do{
-        ptr++;	// its ok
+        ptr+=1;	// its ok
         *str = *ptr;
-        str++;
-        i++;
+        str+=1;
+        i+=1;
     } while(*ptr);
     return i-1;	// No cuento el \0
 }
@@ -58,7 +58,7 @@ uint8_t _str_to_uint32(const char *str, uint32_t *number, uint8_t max_digits){
     const uint32_t pow[] = { 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000};
     *number = 0;
     while(str[size] >= '0' && str[size] <= '9' && size < max_digits){
-            size++;
+            size+=1;
     }
     if (size == 0) return 0;
     while(size--)
@@ -98,24 +98,47 @@ uint8_t _str_to_int32(const char *str, int32_t *number, uint8_t max_digits){
  * @result retorna 1 si se convirtió correctamente, 0 en caso contrario
  */
 uint8_t _hex_to_uint8(const char *str, uint8_t *number){
-	*number = 0;
-	uint8_t despl = 4;
-	for (uint8_t i = 0; i < 2; i++) {
+	uint8_t hl[2];
+	for (uint8_t i = 0; i < 2; ++i) {
 		if(str[i] >= '0' && str[i]<='9')
-			*number |= ((str[i]-'0')<<despl);
+			hl[i] = str[i] - '0';
 		else if(str[i] >= 'a' && str[i]<='f')
-			*number |= ((str[i]-'a'+10)<<despl);
+			hl[i] = str[i] - 'a' + 10;
 		else if(str[i] >= 'A' && str[i]<='F')
-			*number |= ((str[i]-'A'+10)<<despl);
+			hl[i] = str[i] - 'A' + 10;
 		else
-			return 0;
-		despl = 0;
+			return 0; // Conversion failed
 	}
+	*number = (hl[0]<<4) | hl[1];
 	return 1;
 }
 
+
 /*
- * Convierte number en su valor hexadecimal de dos digitos
+ * Convierte *str de ocho caracteres representando un hexadecimal en su valor numerico
+ * @param *str cadena a convertir
+ * @param *number es el resultado
+ * @result retorna 1 si se convirtió correctamente, 0 en caso contrario
+ */
+uint8_t _hex_to_uint32(const char *str, uint32_t *number){
+	uint8_t hl[8];
+	for (uint8_t i = 0; i < 8; ++i) {
+		if(str[i] >= '0' && str[i]<='9')
+			hl[i] = str[i] - '0';
+		else if(str[i] >= 'a' && str[i]<='f')
+			hl[i] = str[i] - 'a' + 10;
+		else if(str[i] >= 'A' && str[i]<='F')
+			hl[i] = str[i] - 'A' + 10;
+		else
+			return 0; // Conversion failed
+	}
+	*number = (hl[0]<<28) | (hl[1]<<24) | (hl[2]<<20) | (hl[3]<<16) | (hl[4]<<12) | (hl[5]<<8) | (hl[6]<<4) | hl[7];
+	return 1;
+}
+
+
+/*
+ * Convierte number en su valor hexadecimal de dos caracteres
  * @param *number es el numero a convertir
  * @param *str cadena que representa el hexadecimal
  */
@@ -128,6 +151,23 @@ void _uint8_to_hex(const uint8_t *number, char *str){
 		str[1] = (*number&15)+'0';
 	else
 		str[1] = (*number&15)+'a'-10;
+}
+
+
+/*
+ * Convierte number en su valor hexadecimal de 8 caracteres
+ * @param *number es el numero a convertir
+ * @param *str cadena que representa el hexadecimal
+ */
+void _uint32_to_hex(const uint32_t *number, char *str){
+	uint8_t value;
+	for (uint8_t i = 0; i < 8; ++i) {
+		value = ((*number<<(i*4))>>28);
+		if(value < 10)
+			str[i] = value + '0';
+		else
+			str[i] = value + 'a' - 10;
+	}
 }
 
 
@@ -160,8 +200,8 @@ uint32_t _strcpy(const char *src, char *dst, uint32_t max){
 uint32_t _strlen(const char *str, uint32_t max){
     uint32_t cnt = 0;
     while(*str && cnt < max){
-        str++;
-        cnt++;
+        str+=1;
+        cnt+=1;
     }
     return cnt;
 }
@@ -191,7 +231,7 @@ uint16_t _cut(const char *str, char separator, uint8_t field, char *res, uint16_
             if(*str == separator)
                 field--;
         }
-        str++;
+        str+=1;
     }
     res[size] = 0;
     return size;
@@ -234,7 +274,7 @@ uint8_t _touppercase(const char *strin, char *strout, uint32_t max){
       *strout = 0;
       return 1;
     }
-    strin++;
+    strin+=1;
   }
   return 0;
 }
@@ -259,7 +299,7 @@ uint8_t _tolowercase(const char *strin, char *strout, uint32_t max){
       *strout = 0;
       return 1;
     }
-    strin++;
+    strin+=1;
   }
   return 0;
 }
