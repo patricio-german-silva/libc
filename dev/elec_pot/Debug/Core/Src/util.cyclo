@@ -1,0 +1,10 @@
+util.c:24:6:usrtick_init	1
+util.c:37:6:usrtick_attach	2
+util.c:46:6:usrtick_work	6
+util.c:131:24:_usrtick_get_us	1
+util.c:138:24:_usrtick_get_us_since	2
+util.c:158:6:heartbeat_init	1
+util.c:164:6:heartbeat	1
+util.c:169:6:heartbeat_attach	1
+util.c:173:6:heartbeat_set_pattern	1
+util.c:177:6:heartbeat_restore_pattern	1

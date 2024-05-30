@@ -1,0 +1,14 @@
+../Core/Src/main.c:165:6:cdc_receive	0	static
+../Core/Src/main.c:118:6:HAL_TIM_PeriodElapsedCallback	0	static
+../Core/Src/main.c:129:6:HAL_UART_RxCpltCallback	0	static
+../Core/Src/main.c:139:6:HAL_UART_TxCpltCallback	0	static
+../Core/Src/main.c:149:6:HAL_ADC_ConvCpltCallback	0	static
+../Core/Src/main.c:157:6:heartbeat	8	static
+../Core/Src/main.c:170:6:tasks_100us	0	static
+../Core/Src/main.c:174:6:tasks_1ms	8	static
+../Core/Src/main.c:197:6:tasks_10ms	0	static
+../Core/Src/main.c:201:6:tasks_100ms	8	static
+../Core/Src/main.c:208:6:tasks_1s	8	static
+../Core/Src/main.c:338:6:SystemClock_Config	88	static,ignoring_inline_asm
+../Core/Src/main.c:240:5:main	88	static,ignoring_inline_asm
+../Core/Src/main.c:759:6:Error_Handler	0	static,ignoring_inline_asm
