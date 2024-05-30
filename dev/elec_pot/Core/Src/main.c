@@ -24,6 +24,7 @@
 
 #include "util.h"
 #include "strutil.h"
+#include "seven_segments.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -55,7 +56,38 @@ ADC_HandleTypeDef hadc1;
 /* Estructuras de control */
 _usrtick usrtick;
 _hb hb;
+_sseg sseg;
 
+static const uint32_t segments_ports[8] = {
+		(uint32_t)SEG_A_GPIO_Port,
+		(uint32_t)SEG_B_GPIO_Port,
+		(uint32_t)SEG_C_GPIO_Port,
+		(uint32_t)SEG_D_GPIO_Port,
+		(uint32_t)SEG_E_GPIO_Port,
+		(uint32_t)SEG_F_GPIO_Port,
+		(uint32_t)SEG_G_GPIO_Port,
+		(uint32_t)SEG_DP_GPIO_Port
+};
+static const uint16_t segments_pins[8] = {
+		SEG_A_Pin,
+		SEG_B_Pin,
+		SEG_C_Pin,
+		SEG_D_Pin,
+		SEG_E_Pin,
+		SEG_F_Pin,
+		SEG_G_Pin,
+		SEG_DP_Pin
+};
+static const uint32_t digits_ports[NUMBER_OF_DIGITS] = {
+		(uint32_t)D0_CK_GPIO_Port,
+		(uint32_t)D1_CK_GPIO_Port,
+		(uint32_t)D2_CK_GPIO_Port
+};
+static const uint16_t digits_pins[NUMBER_OF_DIGITS] = {
+		D0_CK_Pin,
+		D1_CK_Pin,
+		D2_CK_Pin
+};
 
 /* USER CODE END PV */
 
@@ -109,12 +141,25 @@ void heartbeat_gpio_callback(uint8_t state){
 	HAL_GPIO_WritePin(LED_STATUS_GPIO_Port, LED_STATUS_Pin, state);
 }
 
+/*
+ * Al Seven segments
+ */
+void sseg_gpio_high_callback(uint32_t port, uint16_t pin){
+	HAL_GPIO_WritePin((GPIO_TypeDef *)port, pin, GPIO_PIN_SET);
+}
+
+void sseg_gpio_low_callback(uint32_t port, uint16_t pin){
+	HAL_GPIO_WritePin((GPIO_TypeDef *)port, pin, GPIO_PIN_RESET);
+}
+
 
 
 /*
  * Al planificador usrtick
  */
-void tasks_1ms(){}
+void tasks_1ms(){
+	sseg_work(&sseg);
+}
 
 void tasks_10ms(){}
 
@@ -172,12 +217,20 @@ int main(void)
   // Inicializacion de heartbeat
   heartbeat_init(&hb);
   heartbeat_attach(&hb, heartbeat_gpio_callback);
+
+  // Inicializacion de sseg
+  sseg_init(&sseg);
+  sseg_attach_gpio_high(&sseg, sseg_gpio_high_callback);
+  sseg_attach_gpio_low(&sseg, sseg_gpio_low_callback);
+  sseg_set_segments(&sseg, segments_ports, segments_pins);
+  sseg_set_digits(&sseg, digits_ports, digits_pins);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	usrtick_work(&usrtick);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
