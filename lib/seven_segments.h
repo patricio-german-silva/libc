@@ -11,27 +11,27 @@
 #include "strutil.h"
 
 // Cantidad de digitos del display
-#define NUMBER_OF_DIGITS 3
+#define _SSEG_NUMBER_OF_DIGITS 3
 
 // Tipo de display
-//#define DISPLAY_COMMON_ANODE
-#define DISPLAY_COMMON_CATODE
+//#define _SSEG_DISPLAY_COMMON_ANODE
+#define _SSEG_DISPLAY_COMMON_CATODE
 
 // Informacion a mostrar con titulo
-#define NUMBER_OF_INFO_LABELS 7
+#define _SSEG_NUMBER_OF_INFO_LABELS 16
 
 // Tiempo que se muestra el label y la info
-#define SHOW_INFO_LABEL_TIME 1000
-#define SHOW_INFO_DATA_TIME 3000
+#define _SSEG_SHOW_INFO_LABEL_TIME 1000
+#define _SSEG_SHOW_INFO_DATA_TIME 3000
 
 
 
 // Caracteres especiales no mapeables
-#define BLANK_ID 36 // Must match with 'digitCodeMap'
-#define DASH_ID 40
-#define PERIOD_ID 37
-#define ASTERISK_ID 38
-#define UNDERSCORE_ID 39
+#define _SSEG_BLANK_ID 36 // Must match with 'digitCodeMap'
+#define _SSEG_DASH_ID 40
+#define _SSEG_PERIOD_ID 37
+#define _SSEG_ASTERISK_ID 38
+#define _SSEG_UNDERSCORE_ID 39
 
 static const uint8_t digits_map[] = {
   // GFEDCBA  Segments      7-segment map:
@@ -84,10 +84,10 @@ typedef void (*sseg_set_gpio_def)(uint32_t port, uint16_t pin);
 
 typedef struct{
 	uint32_t segments[8][2]; //, PORT, PIN, format  G F E D C B A DP
-	uint32_t digits[NUMBER_OF_DIGITS][2];
-	uint8_t info_labels[NUMBER_OF_INFO_LABELS][NUMBER_OF_DIGITS];
-	uint8_t curr_data[NUMBER_OF_DIGITS];
-	uint8_t curr_info[NUMBER_OF_DIGITS];
+	uint32_t digits[_SSEG_NUMBER_OF_DIGITS][2];
+	uint8_t info_labels[_SSEG_NUMBER_OF_INFO_LABELS][_SSEG_NUMBER_OF_DIGITS];
+	uint8_t curr_data[_SSEG_NUMBER_OF_DIGITS];
+	uint8_t curr_info[_SSEG_NUMBER_OF_DIGITS];
 	uint8_t hold_info;
 	uint8_t curr_digit;
 	uint8_t curr_label;

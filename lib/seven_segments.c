@@ -27,7 +27,7 @@ void sseg_set_segments(_sseg *s, const uint32_t *port, const uint16_t *pin){
 }
 
 void sseg_set_digits(_sseg *s, const uint32_t *port, const uint16_t *pin){
-	for(uint8_t j = 0; j<NUMBER_OF_DIGITS; ++j){
+	for(uint8_t j = 0; j<_SSEG_NUMBER_OF_DIGITS; ++j){
 		s->digits[j][0] = port[j];
 		s->digits[j][1] = pin[j];
 	}
@@ -40,19 +40,19 @@ void sseg_set_info_label(_sseg *s, const char *d, uint8_t i){
 
 // Change funtions to change behabior, dirty but if works it works
 void sseg_attach_gpio_high(_sseg *s, sseg_set_gpio_def f){
-#ifdef DISPLAY_COMMON_ANODE
+#ifdef _SSEG_DISPLAY_COMMON_ANODE
 	s->sseg_sgpio_high = f;
 #endif
-#ifdef DISPLAY_COMMON_CATODE
+#ifdef _SSEG_DISPLAY_COMMON_CATODE
 	s->sseg_sgpio_low = f;
 #endif
 }
 
 void sseg_attach_gpio_low(_sseg *s, sseg_set_gpio_def f){
-#ifdef DISPLAY_COMMON_ANODE
+#ifdef _SSEG_DISPLAY_COMMON_ANODE
 	s->sseg_sgpio_low = f;
 #endif
-#ifdef DISPLAY_COMMON_CATODE
+#ifdef _SSEG_DISPLAY_COMMON_CATODE
 	s->sseg_sgpio_high = f;
 #endif
 }
@@ -70,30 +70,30 @@ void sseg_write_data_digit(_sseg *s, uint8_t digit, uint8_t value){
 }
 
 void sseg_shift_data_left(_sseg *s){
-  for (uint8_t x = 0; x < NUMBER_OF_DIGITS-1; ++x){
+  for (uint8_t x = 0; x < _SSEG_NUMBER_OF_DIGITS-1; ++x){
     s->curr_data[x] = s->curr_data[x+1];
-    s->curr_data[x+1] = digits_map[BLANK_ID];
+    s->curr_data[x+1] = digits_map[_SSEG_BLANK_ID];
   }
 }
 
 void sseg_shift_data_rigth(_sseg *s){
-  for (uint8_t x = NUMBER_OF_DIGITS-1; x > 0; --x){
+  for (uint8_t x = _SSEG_NUMBER_OF_DIGITS-1; x > 0; --x){
     s->curr_data[x] = s->curr_data[x-1];
-    s->curr_data[x-1] = digits_map[BLANK_ID];
+    s->curr_data[x-1] = digits_map[_SSEG_BLANK_ID];
   }
 }
 
 void sseg_write_numeric_info(_sseg *s, int32_t n, int8_t dp, uint8_t l){
 	_sseg_write_number_to_array(s->curr_info, n, dp);
-  s->label_time_remains = SHOW_INFO_LABEL_TIME;
-	s->info_time_remains = SHOW_INFO_DATA_TIME;
+  s->label_time_remains = _SSEG_SHOW_INFO_LABEL_TIME;
+	s->info_time_remains = _SSEG_SHOW_INFO_DATA_TIME;
   s->curr_label = l;
 }
 
 void sseg_write_char_info(_sseg *s, const char *d, uint8_t l){
   _sseg_write_chars_to_array(s->curr_info, d);
-  s->label_time_remains = SHOW_INFO_LABEL_TIME;
-	s->info_time_remains = SHOW_INFO_DATA_TIME;
+  s->label_time_remains = _SSEG_SHOW_INFO_LABEL_TIME;
+	s->info_time_remains = _SSEG_SHOW_INFO_DATA_TIME;
   s->curr_label = l;
 }
 
@@ -102,16 +102,16 @@ void sseg_write_info_digit(_sseg *s, uint8_t digit, uint8_t value){
 }
 
 void sseg_shift_info_left(_sseg *s){
-  for (uint8_t x = 0; x < NUMBER_OF_DIGITS-1; ++x){
+  for (uint8_t x = 0; x < _SSEG_NUMBER_OF_DIGITS-1; ++x){
     s->curr_info[x] = s->curr_info[x+1];
-    s->curr_info[x+1] = digits_map[BLANK_ID];
+    s->curr_info[x+1] = digits_map[_SSEG_BLANK_ID];
   }
 }
 
 void sseg_shift_info_rigth(_sseg *s){
-  for (uint8_t x = NUMBER_OF_DIGITS-1; x > 0; --x){
+  for (uint8_t x = _SSEG_NUMBER_OF_DIGITS-1; x > 0; --x){
     s->curr_info[x] = s->curr_info[x-1];
-    s->curr_info[x-1] = digits_map[BLANK_ID];
+    s->curr_info[x-1] = digits_map[_SSEG_BLANK_ID];
   }
 }
 
@@ -120,7 +120,7 @@ void sseg_update_info(_sseg *s, int32_t n, int8_t dp, uint8_t l, uint8_t ut, uin
     return;
   _sseg_write_number_to_array(s->curr_info, n, dp);
   if(ut == 1)
-    s->info_time_remains = SHOW_INFO_DATA_TIME;
+    s->info_time_remains = _SSEG_SHOW_INFO_DATA_TIME;
   if(olt == 1)
     s->label_time_remains = 0;
 }
@@ -157,7 +157,7 @@ void sseg_work(_sseg *s){
 	s->sseg_sgpio_high(s->digits[s->curr_digit][0], (uint16_t)s->digits[s->curr_digit][1]);
   
   s->curr_digit++;
-	if(s->curr_digit == NUMBER_OF_DIGITS)
+	if(s->curr_digit == _SSEG_NUMBER_OF_DIGITS)
 		s->curr_digit = 0;
 
 	if(s->label_time_remains > 0){
@@ -189,25 +189,27 @@ void sseg_work(_sseg *s){
 
 
 /******************************************************************************************/
+/*                          LOCAL                                                         */
+/******************************************************************************************/
 
 static void _sseg_write_number_to_array(uint8_t *data, int32_t n, int8_t dp){
 	char str[10];
 	uint8_t numdig = _int32_to_str(n, str);
 
 	// Number too big, show dashes
-	if(numdig > NUMBER_OF_DIGITS){
-		for(uint8_t j = 0; j < NUMBER_OF_DIGITS; ++j)
-			data[j] = digits_map[DASH_ID];
+	if(numdig > _SSEG_NUMBER_OF_DIGITS){
+		for(uint8_t j = 0; j < _SSEG_NUMBER_OF_DIGITS; ++j)
+			data[j] = digits_map[_SSEG_DASH_ID];
 		return;
 	}
 
 	uint8_t i = 0;
 	uint8_t j = 0;
-	while (i < NUMBER_OF_DIGITS){
-		if(i < NUMBER_OF_DIGITS-numdig)
-			data[i++] = digits_map[BLANK_ID];
+	while (i < _SSEG_NUMBER_OF_DIGITS){
+		if(i < _SSEG_NUMBER_OF_DIGITS-numdig)
+			data[i++] = digits_map[_SSEG_BLANK_ID];
 		else if(str[j] == '-'){
-      data[i++] = digits_map[DASH_ID];
+      data[i++] = digits_map[_SSEG_DASH_ID];
       j++;
     }else if(dp == j)
 			data[i++] = (digits_map[(uint8_t)str[j++]-'0'])|(1<<8);
@@ -217,7 +219,7 @@ static void _sseg_write_number_to_array(uint8_t *data, int32_t n, int8_t dp){
 }
 
 static void _sseg_write_chars_to_array(uint8_t *data, const char *value){
-	for(uint8_t j = 0; j<NUMBER_OF_DIGITS; ++j){
+	for(uint8_t j = 0; j<_SSEG_NUMBER_OF_DIGITS; ++j){
 		if(value[j]>= '0' && value[j]<= '9'){
 			data[j] = digits_map[(uint8_t)value[j]-'0'];
 		}else if(value[j]>= 'a' && value[j]<= 'z'){
@@ -227,22 +229,22 @@ static void _sseg_write_chars_to_array(uint8_t *data, const char *value){
 		}else{
 			switch(value[j]){
 			case ' ':
-				data[j] = digits_map[BLANK_ID];
+				data[j] = digits_map[_SSEG_BLANK_ID];
 				break;
 			case '-':
-				data[j] = digits_map[DASH_ID];
+				data[j] = digits_map[_SSEG_DASH_ID];
 				break;
 			case '.':
-				data[j] = digits_map[PERIOD_ID];
+				data[j] = digits_map[_SSEG_PERIOD_ID];
 				break;
 			case '*':
-				data[j] = digits_map[ASTERISK_ID];
+				data[j] = digits_map[_SSEG_ASTERISK_ID];
 				break;
 			case '_':
-				data[j] = digits_map[UNDERSCORE_ID];
+				data[j] = digits_map[_SSEG_UNDERSCORE_ID];
 				break;
 			default:
-				data[j] = digits_map[BLANK_ID];
+				data[j] = digits_map[_SSEG_BLANK_ID];
 			}
 		}
 	}

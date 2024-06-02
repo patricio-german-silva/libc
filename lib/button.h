@@ -26,8 +26,8 @@
 #define _BUTTON_REPEAT_TIME                               500
 #define _BUTTON_ACCELERATE_TIME_1                         150
 #define _BUTTON_ACCELERATE_TIME_2                          50
-#define _BUTTON_ACCELERATE_TO_TIME_1_ON                     5
-#define _BUTTON_ACCELERATE_TO_TIME_2_ON                    15
+#define _BUTTON_ACCELERATE_TO_TIME_1_ON                     3
+#define _BUTTON_ACCELERATE_TO_TIME_2_ON                    10
 
 typedef uint8_t (*btn_read_gpio_def)(uint32_t port, uint16_t pin);
 
