@@ -3,7 +3,7 @@
  *
  *  Created on: May 30, 2024
  *      Author: psilva
- * TODO: switch mode
+ * Version: 1.0
  */
 
 #include "button.h"
