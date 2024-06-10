@@ -20,7 +20,7 @@
 // Informacion a mostrar con titulo
 #define _SSEG_NUMBER_OF_INFO_LABELS 16
 
-// Tiempo que se muestra el label y la info
+// Tiempo que se muestra el label y la info, en cantidad de llamadas a work
 #define _SSEG_SHOW_INFO_LABEL_TIME 1000
 #define _SSEG_SHOW_INFO_DATA_TIME 3000
 
@@ -91,8 +91,8 @@ typedef struct{
 	uint8_t hold_info;
 	uint8_t curr_digit;
 	uint8_t curr_label;
-	uint32_t label_time_remains;
-	uint32_t info_time_remains;
+	uint32_t label_time_remain;
+	uint32_t info_time_remain;
 
 	sseg_set_gpio_def sseg_sgpio_high;
 	sseg_set_gpio_def sseg_sgpio_low;

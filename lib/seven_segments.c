@@ -15,8 +15,8 @@ void sseg_init(_sseg *s){
 	s->hold_info = 0;
 	s->curr_digit = 0;
 	s->curr_label = 0;
-	s->label_time_remains = 0;
-	s->info_time_remains = 0;
+	s->label_time_remain = 0;
+	s->info_time_remain = 0;
 }
 
 void sseg_set_segments(_sseg *s, const uint32_t *port, const uint16_t *pin){
@@ -38,7 +38,7 @@ void sseg_set_info_label(_sseg *s, const char *d, uint8_t i){
   _sseg_write_chars_to_array(s->info_labels[i], d);
 }
 
-// Change funtions to change behabior, dirty but if works it works
+// Change functions to change behavior, I'm not proud of it, ok
 void sseg_attach_gpio_high(_sseg *s, sseg_set_gpio_def f){
 #ifdef _SSEG_DISPLAY_COMMON_ANODE
 	s->sseg_sgpio_high = f;
@@ -85,15 +85,15 @@ void sseg_shift_data_rigth(_sseg *s){
 
 void sseg_write_numeric_info(_sseg *s, int32_t n, int8_t dp, uint8_t l){
 	_sseg_write_number_to_array(s->curr_info, n, dp);
-  s->label_time_remains = _SSEG_SHOW_INFO_LABEL_TIME;
-	s->info_time_remains = _SSEG_SHOW_INFO_DATA_TIME;
+  s->label_time_remain = _SSEG_SHOW_INFO_LABEL_TIME;
+	s->info_time_remain = _SSEG_SHOW_INFO_DATA_TIME;
   s->curr_label = l;
 }
 
 void sseg_write_char_info(_sseg *s, const char *d, uint8_t l){
   _sseg_write_chars_to_array(s->curr_info, d);
-  s->label_time_remains = _SSEG_SHOW_INFO_LABEL_TIME;
-	s->info_time_remains = _SSEG_SHOW_INFO_DATA_TIME;
+  s->label_time_remain = _SSEG_SHOW_INFO_LABEL_TIME;
+	s->info_time_remain = _SSEG_SHOW_INFO_DATA_TIME;
   s->curr_label = l;
 }
 
@@ -120,14 +120,14 @@ void sseg_update_info(_sseg *s, int32_t n, int8_t dp, uint8_t l, uint8_t ut, uin
     return;
   _sseg_write_number_to_array(s->curr_info, n, dp);
   if(ut == 1)
-    s->info_time_remains = _SSEG_SHOW_INFO_DATA_TIME;
+    s->info_time_remain = _SSEG_SHOW_INFO_DATA_TIME;
   if(olt == 1)
-    s->label_time_remains = 0;
+    s->label_time_remain = 0;
 }
 
 void sseg_abort_info(_sseg *s){
-	s->label_time_remains = 0;
-	s->info_time_remains = 0;
+	s->label_time_remain = 0;
+	s->info_time_remain = 0;
 }
 
 void sseg_hold_info(_sseg *s, uint8_t h){
@@ -142,9 +142,9 @@ void sseg_toggle_hold_info(_sseg *s){
 }
 
 uint8_t sseg_display_status(_sseg *s){
-  if(s->label_time_remains > 0)
+  if(s->label_time_remain > 0)
     return 1;
-  else if(s->info_time_remains > 0)
+  else if(s->info_time_remain > 0)
     return 2;
   else
     return 0;
@@ -160,14 +160,14 @@ void sseg_work(_sseg *s){
 	if(s->curr_digit == _SSEG_NUMBER_OF_DIGITS)
 		s->curr_digit = 0;
 
-	if(s->label_time_remains > 0){
-		s->label_time_remains--;
+	if(s->label_time_remain > 0){
+		s->label_time_remain--;
 		to_display = s->info_labels[s->curr_label];
-	}else if(s->info_time_remains > 0){
+	}else if(s->info_time_remain > 0){
 		if(s->hold_info == 0)
-      s->info_time_remains--;
+      s->info_time_remain--;
     else
-      s->info_time_remains = 1;  // back from a hold imediatly
+      s->info_time_remain = 1;  // back from a hold imediatly
 		to_display = s->curr_info;
 	}else{
 		to_display = s->curr_data;
