@@ -134,6 +134,10 @@ void sseg_hold_info(_sseg *s, uint8_t h){
 	s->hold_info = h;
 }
 
+uint8_t sseg_get_hold_info(_sseg *s){
+  return s->hold_info;
+}
+
 void sseg_toggle_hold_info(_sseg *s){
 	if(s->hold_info == 0)
     s->hold_info = 1;
@@ -211,8 +215,8 @@ static void _sseg_write_number_to_array(uint8_t *data, int32_t n, int8_t dp){
 		else if(str[j] == '-'){
       data[i++] = digits_map[_SSEG_DASH_ID];
       j++;
-    }else if(dp == j)
-			data[i++] = (digits_map[(uint8_t)str[j++]-'0'])|(1<<8);
+    }else if(dp == _SSEG_NUMBER_OF_DIGITS-j-1)
+			data[i++] = (digits_map[(uint8_t)str[j++]-'0'])|(1<<7);
 		else
 			data[i++] = digits_map[(uint8_t)str[j++]-'0'];
 	}

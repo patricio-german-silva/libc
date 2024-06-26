@@ -104,7 +104,7 @@ void sseg_set_digits(_sseg *s, const uint32_t *port, const uint16_t *pin);
 void sseg_set_info_label(_sseg *s, const char *d, uint8_t i);
 void sseg_attach_gpio_high(_sseg *s, sseg_set_gpio_def f);
 void sseg_attach_gpio_low(_sseg *s, sseg_set_gpio_def f);
-void sseg_write_numeric_data(_sseg *s, int32_t n, int8_t dp);				// n: Number to show, dp: decimal places
+void sseg_write_numeric_data(_sseg *s, int32_t n, int8_t dp);				// n: Number to show, dp: decimal places. dp=0 -> no decimal places but dot on the last digit, dp=-1 -> no dot at all
 void sseg_write_char_data(_sseg *s, const char *d);				// n: Number to show, dp: decimal places
 void sseg_write_data_digit(_sseg *s, uint8_t digit, uint8_t value);		// digit, value, on G F E D C B A DP bits format
 void sseg_shift_data_left(_sseg *s);		// shift digits to the left
@@ -117,6 +117,7 @@ void sseg_shift_info_left(_sseg *s);		// shift digits to the left
 void sseg_shift_info_rigth(_sseg *s);		// shift digits to the rigth
 void sseg_abort_info(_sseg *s);										// Stop showing current info
 void sseg_hold_info(_sseg *s, uint8_t h);							// The display holds the info values 1: true, 0: false
+uint8_t sseg_get_hold_info(_sseg *s);							// Retruns 1 if the display holds the info values
 void sseg_toggle_hold_info(_sseg *s);							// The display holds the info values 1: true, 0: false
 uint8_t sseg_display_status(_sseg *s);							// 0: show data, 1: show info label, 2: show info data
 void sseg_work(_sseg *s);
