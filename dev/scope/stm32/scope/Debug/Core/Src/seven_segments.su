@@ -1,0 +1,13 @@
+../Core/Src/seven_segments.c:13:6:sseg_init	16	static
+../Core/Src/seven_segments.c:21:6:sseg_set_segments	32	static
+../Core/Src/seven_segments.c:28:6:sseg_set_digits	32	static
+../Core/Src/seven_segments.c:36:6:sseg_set_info_label	32	static
+../Core/Src/seven_segments.c:69:6:sseg_attach_gpio_high	16	static
+../Core/Src/seven_segments.c:78:6:sseg_attach_gpio_low	16	static
+../Core/Src/seven_segments.c:87:6:sseg_write_data	24	static
+../Core/Src/seven_segments.c:92:6:sseg_write_digit	16	static
+../Core/Src/seven_segments.c:96:6:sseg_write_info	24	static
+../Core/Src/seven_segments.c:102:6:sseg_abort_info	16	static
+../Core/Src/seven_segments.c:107:6:sseg_hold_info	16	static
+../Core/Src/seven_segments.c:113:6:sseg_work	24	static
+../Core/Src/seven_segments.c:148:13:_sseg_write_number_to_array	40	static

@@ -1,0 +1,3 @@
+../Core/Src/util.c:9:6:usrcnt_init	0	static
+../Core/Src/util.c:17:6:heartbeat_init	0	static
+../Core/Src/util.c:22:6:adc_init	0	static
