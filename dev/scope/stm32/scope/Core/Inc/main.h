@@ -62,8 +62,20 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define LED_STATUS_Pin GPIO_PIN_13
 #define LED_STATUS_GPIO_Port GPIOC
-#define PWM_2_Pin GPIO_PIN_8
-#define PWM_2_GPIO_Port GPIOB
+#define A1_Pin GPIO_PIN_0
+#define A1_GPIO_Port GPIOA
+#define A2_Pin GPIO_PIN_1
+#define A2_GPIO_Port GPIOA
+#define O1__Pin GPIO_PIN_2
+#define O1__GPIO_Port GPIOA
+#define O1_A3_Pin GPIO_PIN_3
+#define O1_A3_GPIO_Port GPIOA
+#define O2__Pin GPIO_PIN_4
+#define O2__GPIO_Port GPIOA
+#define O2_A5_Pin GPIO_PIN_5
+#define O2_A5_GPIO_Port GPIOA
+#define PWM_1_Pin GPIO_PIN_8
+#define PWM_1_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

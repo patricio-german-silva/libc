@@ -18,13 +18,16 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "usb_device.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "usbd_cdc_if.h"
 #include "util.h"
 #include "strutil.h"
-#include "seven_segments.h"
+#include "pcomm.h"
+#include "cmdparser.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -42,57 +45,33 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
+#define _PCOMM_RX_BUFF_SIZE 256
+#define _PCOMM_TX_BUFF_SIZE 1024
 
-
-
+#define _FIRMWARE_VERSION_ "0.0.1-alpha\0"
+const char firmware_version[] = _FIRMWARE_VERSION_;
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc2;
 
+TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
 
 /* USER CODE BEGIN PV */
 
+/* Creación de buffers */
+uint8_t __rx_bf_cdc[_PCOMM_RX_BUFF_SIZE];
+uint8_t __tx_bf_cdc[_PCOMM_TX_BUFF_SIZE];
 
 /* Estructuras de control */
 _usrtick usrtick;
 _hb hb;
-_sseg sseg;
-
-static const uint32_t segments_ports[8] = {
-		(uint32_t)SEG_A_GPIO_Port,
-		(uint32_t)SEG_B_GPIO_Port,
-		(uint32_t)SEG_C_GPIO_Port,
-		(uint32_t)SEG_D_GPIO_Port,
-		(uint32_t)SEG_E_GPIO_Port,
-		(uint32_t)SEG_F_GPIO_Port,
-		(uint32_t)SEG_G_GPIO_Port,
-		(uint32_t)SEG_DP_GPIO_Port
-};
-static const uint16_t segments_pins[8] = {
-		SEG_A_Pin,
-		SEG_B_Pin,
-		SEG_C_Pin,
-		SEG_D_Pin,
-		SEG_E_Pin,
-		SEG_F_Pin,
-		SEG_G_Pin,
-		SEG_DP_Pin
-};
-static const uint32_t digits_ports[NUMBER_OF_DIGITS] = {
-		(uint32_t)D0_CK_GPIO_Port,
-		(uint32_t)D1_CK_GPIO_Port,
-		(uint32_t)D2_CK_GPIO_Port
-};
-static const uint16_t digits_pins[NUMBER_OF_DIGITS] = {
-		D0_CK_Pin,
-		D1_CK_Pin,
-		D2_CK_Pin
-};
+_pcomm cdc;
 
 /* USER CODE END PV */
+
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
@@ -100,7 +79,10 @@ static void MX_GPIO_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_ADC2_Init(void);
 static void MX_TIM4_Init(void);
+static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
+
+void cdc_receive(uint8_t *Buf, uint32_t *Len);
 
 void tasks_1ms();
 void tasks_10ms();
@@ -147,23 +129,28 @@ void heartbeat_gpio_callback(uint8_t state){
 }
 
 /*
- * Al Seven segments
+ * al modulo CDC para la carga de datos recibidos por USB CDC
  */
-void sseg_gpio_high_callback(uint32_t port, uint16_t pin){
-	HAL_GPIO_WritePin((GPIO_TypeDef *)port, pin, GPIO_PIN_SET);
+void cdc_receive(uint8_t *Buf, uint32_t *Len){
+	pcomm_rx_receive_array(&cdc, Buf, *Len);
 }
-
-void sseg_gpio_low_callback(uint32_t port, uint16_t pin){
-	HAL_GPIO_WritePin((GPIO_TypeDef *)port, pin, GPIO_PIN_RESET);
-}
-
-
 
 /*
  * Al planificador usrtick
  */
 void tasks_1ms(){
-	sseg_work(&sseg);
+	// Envio datos disponibles en pcomm CDC
+	if(pcomm_tx_data_ready(&cdc)){
+		if(CDC_Transmit_FS_Status() == USBD_OK){
+			CDC_Transmit_FS(cdc.tx.buff, cdc.tx.iw);
+			pcomm_tx_data_flush(&cdc);
+		}
+	}
+
+	// Ejecucion de comandos
+	if(pcomm_rx_data_ready(&cdc)){
+		cmd_exec(&cdc);
+	}
 }
 
 void tasks_10ms(){}
@@ -211,6 +198,8 @@ int main(void)
   MX_ADC1_Init();
   MX_ADC2_Init();
   MX_TIM4_Init();
+  MX_USB_DEVICE_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
 
   // Inicializacion del planificador usertick
@@ -225,12 +214,19 @@ int main(void)
   heartbeat_init(&hb);
   heartbeat_attach(&hb, heartbeat_gpio_callback);
 
-  // Inicializacion de sseg
-  sseg_init(&sseg);
-  sseg_attach_gpio_high(&sseg, sseg_gpio_high_callback);
-  sseg_attach_gpio_low(&sseg, sseg_gpio_low_callback);
-  sseg_set_segments(&sseg, segments_ports, segments_pins);
-  sseg_set_digits(&sseg, digits_ports, digits_pins);
+  // Inicializo protocolo de comunicación
+  pcomm_init(&cdc, _PCOMM_TX_MODE_BATCH, __rx_bf_cdc, _PCOMM_RX_BUFF_SIZE, __tx_bf_cdc, _PCOMM_TX_BUFF_SIZE, 100);
+
+  // Inicializo recepcion de comandos
+  cmd_init(&usrtick, &hb, &cdc);
+
+  // Establezco la funcion callback para la recepcion sobre USB CDC
+  CDC_Attach_Receive_FS(cdc_receive);
+
+  //  Inicio los Timers
+  HAL_TIM_Base_Start_IT(&htim3);
+  HAL_TIM_Base_Start(&htim4);
+  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -283,8 +279,9 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC|RCC_PERIPHCLK_USB;
   PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV6;
+  PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLL_DIV1_5;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
@@ -303,6 +300,7 @@ static void MX_ADC1_Init(void)
 
   /* USER CODE END ADC1_Init 0 */
 
+  ADC_MultiModeTypeDef multimode = {0};
   ADC_ChannelConfTypeDef sConfig = {0};
 
   /* USER CODE BEGIN ADC1_Init 1 */
@@ -315,10 +313,18 @@ static void MX_ADC1_Init(void)
   hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
   hadc1.Init.ContinuousConvMode = DISABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
-  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T3_TRGO;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc1.Init.NbrOfConversion = 1;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure the ADC multi-mode
+  */
+  multimode.Mode = ADC_DUALMODE_REGSIMULT;
+  if (HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK)
   {
     Error_Handler();
   }
@@ -382,6 +388,51 @@ static void MX_ADC2_Init(void)
   /* USER CODE BEGIN ADC2_Init 2 */
 
   /* USER CODE END ADC2_Init 2 */
+
+}
+
+/**
+  * @brief TIM3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM3_Init(void)
+{
+
+  /* USER CODE BEGIN TIM3_Init 0 */
+
+  /* USER CODE END TIM3_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM3_Init 1 */
+
+  /* USER CODE END TIM3_Init 1 */
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 71;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 1;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM3_Init 2 */
+
+  /* USER CODE END TIM3_Init 2 */
 
 }
 
@@ -464,12 +515,22 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LED_STATUS_GPIO_Port, LED_STATUS_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOA, O1__Pin|O1_A3_Pin|O2__Pin|O2_A5_Pin, GPIO_PIN_RESET);
+
   /*Configure GPIO pin : LED_STATUS_Pin */
   GPIO_InitStruct.Pin = LED_STATUS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED_STATUS_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : O1__Pin O1_A3_Pin O2__Pin O2_A5_Pin */
+  GPIO_InitStruct.Pin = O1__Pin|O1_A3_Pin|O2__Pin|O2_A5_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
