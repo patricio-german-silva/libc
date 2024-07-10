@@ -8,3 +8,4 @@ util.c:164:6:heartbeat	1
 util.c:169:6:heartbeat_attach	1
 util.c:173:6:heartbeat_set_pattern	1
 util.c:177:6:heartbeat_restore_pattern	1
+util.c:305:9:get_firmware_version	29

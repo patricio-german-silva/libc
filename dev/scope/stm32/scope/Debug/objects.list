@@ -1,5 +1,6 @@
 "./Core/Src/button.o"
 "./Core/Src/cmdparser.o"
+"./Core/Src/local.o"
 "./Core/Src/main.o"
 "./Core/Src/pcomm.o"
 "./Core/Src/stm32f1xx_hal_msp.o"

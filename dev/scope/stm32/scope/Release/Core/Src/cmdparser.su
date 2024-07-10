@@ -1,1 +1,2 @@
-../Core/Src/cmdparser.c:27:6:cmd_exec	8	static
+../Core/Src/cmdparser.c:26:6:cmd_init	0	static
+../Core/Src/cmdparser.c:40:6:cmd_exec	8	static

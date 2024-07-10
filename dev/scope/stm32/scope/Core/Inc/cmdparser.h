@@ -11,6 +11,7 @@
 #include "util.h"
 #include "strutil.h"
 #include "pcomm.h"
+#include "local.h"
 
 
 
@@ -45,7 +46,7 @@
  * Recibe las estructuras de datos para posteriores llamadas a cmd_exec
  * Antes de llamar se debe verificar que ya hay un nuevo comando en _pcomm listo para ser procesado
  */
-void cmd_init(_usrtick *ut, _hb *h, _pcomm *p);
+void cmd_init(_usrtick *ut, _hb *h, _pcomm *p, _control *c);
 
 void cmd_exec(_pcomm *p);
 

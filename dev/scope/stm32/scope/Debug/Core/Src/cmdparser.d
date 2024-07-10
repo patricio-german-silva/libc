@@ -28,7 +28,7 @@ Core/Src/cmdparser.o: ../Core/Src/cmdparser.c ../Core/Inc/cmdparser.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pcd.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_ll_usb.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pcd_ex.h \
- ../Core/Inc/strutil.h ../Core/Inc/pcomm.h
+ ../Core/Inc/strutil.h ../Core/Inc/pcomm.h ../Core/Inc/local.h
 ../Core/Inc/cmdparser.h:
 ../Core/Inc/util.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h:
@@ -62,3 +62,4 @@ Core/Src/cmdparser.o: ../Core/Src/cmdparser.c ../Core/Inc/cmdparser.h \
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pcd_ex.h:
 ../Core/Inc/strutil.h:
 ../Core/Inc/pcomm.h:
+../Core/Inc/local.h:

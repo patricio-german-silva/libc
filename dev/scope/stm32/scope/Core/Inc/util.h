@@ -121,7 +121,7 @@
 //#define _UTIL_USE_STORAGE_CONFIG_ON_FLASH_UTILITIES
 
 /* Utilizar utilidades de versionado */
-//#define _UTIL_USE_FIRMWARE_VERSION_UTILITIES
+#define _UTIL_USE_FIRMWARE_VERSION_UTILITIES
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #ifdef _UTIL_USE_STORAGE_CONFIG_ON_FLASH_UTILITIES
 

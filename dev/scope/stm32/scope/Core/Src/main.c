@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include "usbd_cdc_if.h"
 #include "util.h"
+#include "local.h"
 #include "strutil.h"
 #include "pcomm.h"
 #include "cmdparser.h"
@@ -47,9 +48,17 @@
 /* USER CODE BEGIN PM */
 #define _PCOMM_RX_BUFF_SIZE 256
 #define _PCOMM_TX_BUFF_SIZE 1024
+#define _ADC_BUFF_SIZE 2048
 
-#define _FIRMWARE_VERSION_ "0.0.1-alpha\0"
+/* String firmware_version */
+#ifndef _FIRMWARE_VERSION_
+#define _FIRMWARE_VERSION_PREFIX_ "0.0.1_build_\0"
+#define _FIRMWARE_VERSION_SUFFIX_ "-alpha\0"
+char firmware_version[42];
+#else
 const char firmware_version[] = _FIRMWARE_VERSION_;
+#endif
+
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -64,14 +73,20 @@ TIM_HandleTypeDef htim4;
 /* Creación de buffers */
 uint8_t __rx_bf_cdc[_PCOMM_RX_BUFF_SIZE];
 uint8_t __tx_bf_cdc[_PCOMM_TX_BUFF_SIZE];
+uint16_t __bf_adc_ch1[_ADC_BUFF_SIZE];
+uint16_t __bf_adc_ch2[_ADC_BUFF_SIZE];
+
 
 /* Estructuras de control */
 _usrtick usrtick;
 _hb hb;
 _pcomm cdc;
+_control control;
+
+
+
 
 /* USER CODE END PV */
-
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
@@ -109,9 +124,11 @@ void tasks_10s();
  * ISR ADC - Conversion complete
  */
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
-
+	if(control.bf_adc_ch1_iw < _ADC_BUFF_SIZE)
+		control.bf_adc_ch1[control.bf_adc_ch1_iw++] = HAL_ADC_GetValue(&hadc1);
+	if(control.bf_adc_ch2_iw < _ADC_BUFF_SIZE)
+		control.bf_adc_ch2[control.bf_adc_ch2_iw++] = HAL_ADC_GetValue(&hadc2);
 }
-
 
 /*
  * --------------  FUNCIONES DE USUARIO  ---------------------------
@@ -133,6 +150,19 @@ void heartbeat_gpio_callback(uint8_t state){
  */
 void cdc_receive(uint8_t *Buf, uint32_t *Len){
 	pcomm_rx_receive_array(&cdc, Buf, *Len);
+}
+
+/* Setea el timer para la salida  PWM */
+void pwm_set_timer(uint16_t prescaler, uint16_t autoreload, uint16_t compare){
+	__HAL_TIM_SET_PRESCALER(&htim4, prescaler);
+	__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_3, compare);
+	__HAL_TIM_SET_AUTORELOAD(&htim4, autoreload);
+}
+
+/* Setea el timer para el ADC */
+void adc_set_timer(uint16_t prescaler, uint16_t autoreload){
+	__HAL_TIM_SET_PRESCALER(&htim3, prescaler);
+	__HAL_TIM_SET_AUTORELOAD(&htim3, autoreload);
 }
 
 /*
@@ -202,6 +232,12 @@ int main(void)
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
 
+  // Establezco la cadena firmware_version si no esta definida como macro o via MakeFile
+  #ifndef _FIRMWARE_VERSION_
+  get_firmware_version(_FIRMWARE_VERSION_PREFIX_, _FIRMWARE_VERSION_SUFFIX_, firmware_version);
+  #endif
+
+
   // Inicializacion del planificador usertick
   usrtick_init(&usrtick, 1000);
   usrtick_attach(&usrtick, tasks_1ms, 1);
@@ -218,7 +254,10 @@ int main(void)
   pcomm_init(&cdc, _PCOMM_TX_MODE_BATCH, __rx_bf_cdc, _PCOMM_RX_BUFF_SIZE, __tx_bf_cdc, _PCOMM_TX_BUFF_SIZE, 100);
 
   // Inicializo recepcion de comandos
-  cmd_init(&usrtick, &hb, &cdc);
+  cmd_init(&usrtick, &hb, &cdc, &control);
+
+  // Inicializo control
+  local_init_control(&control, __bf_adc_ch1, _ADC_BUFF_SIZE, __bf_adc_ch2, _ADC_BUFF_SIZE);
 
   // Establezco la funcion callback para la recepcion sobre USB CDC
   CDC_Attach_Receive_FS(cdc_receive);
@@ -227,6 +266,19 @@ int main(void)
   HAL_TIM_Base_Start_IT(&htim3);
   HAL_TIM_Base_Start(&htim4);
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
+
+  // calibrate ADC for better accuracy and start it w/ interrupt
+  if(HAL_ADCEx_Calibration_Start(&hadc1) != HAL_OK)
+	  Error_Handler();
+  if(HAL_ADCEx_Calibration_Start(&hadc2) != HAL_OK)
+  	  Error_Handler();
+
+  if(HAL_ADC_Start_IT(&hadc1) != HAL_OK)
+	  Error_Handler();
+
+  if(HAL_ADC_Start_IT(&hadc2) != HAL_OK)
+	  Error_Handler();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -412,9 +464,9 @@ static void MX_TIM3_Init(void)
   htim3.Instance = TIM3;
   htim3.Init.Prescaler = 71;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 1;
+  htim3.Init.Period = 100;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
   {
     Error_Handler();
@@ -460,7 +512,7 @@ static void MX_TIM4_Init(void)
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim4.Init.Period = 65535;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
   {
     Error_Handler();

@@ -38,34 +38,34 @@ $(wildcard ../makefile.init) \
 $(wildcard ../makefile.targets) \
 
 
-BUILD_ARTIFACT_NAME := mic_auto
+BUILD_ARTIFACT_NAME := scope
 BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX :=
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ARTIFACT_EXTENSION),.$(BUILD_ARTIFACT_EXTENSION),)
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-mic_auto.elf \
+scope.elf \
 
 MAP_FILES += \
-mic_auto.map \
+scope.map \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-mic_auto.list \
+scope.list \
 
 
 # All Target
 all: main-build
 
 # Main-build Target
-main-build: mic_auto.elf secondary-outputs
+main-build: scope.elf secondary-outputs
 
 # Tool invocations
-mic_auto.elf mic_auto.map: $(OBJS) $(USER_OBJS) /home/psilva/Development/dev_micro/stm32/mic_auto/STM32F103CBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "mic_auto.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"/home/psilva/Development/dev_micro/stm32/mic_auto/STM32F103CBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="mic_auto.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+scope.elf scope.map: $(OBJS) $(USER_OBJS) /home/psilva/Development/libc/dev/scope/stm32/scope/STM32F103CBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "scope.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"/home/psilva/Development/libc/dev/scope/stm32/scope/STM32F103CBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="scope.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -74,14 +74,14 @@ default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-mic_auto.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "mic_auto.list"
+scope.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "scope.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) default.size.stdout mic_auto.elf mic_auto.list mic_auto.map
+	-$(RM) default.size.stdout scope.elf scope.list scope.map
 	-@echo ' '
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)

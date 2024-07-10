@@ -8,3 +8,4 @@
 ../Core/Src/util.c:169:6:heartbeat_attach	16	static
 ../Core/Src/util.c:173:6:heartbeat_set_pattern	16	static
 ../Core/Src/util.c:177:6:heartbeat_restore_pattern	16	static
+../Core/Src/util.c:305:9:get_firmware_version	48	static

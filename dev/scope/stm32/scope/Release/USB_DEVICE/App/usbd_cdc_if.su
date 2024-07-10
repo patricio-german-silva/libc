@@ -4,3 +4,5 @@
 ../USB_DEVICE/App/usbd_cdc_if.c:150:15:CDC_Init_FS	8	static
 ../USB_DEVICE/App/usbd_cdc_if.c:280:9:CDC_Transmit_FS	8	static
 ../USB_DEVICE/App/usbd_cdc_if.c:295:6:CDC_Attach_Receive_FS	0	static
+../USB_DEVICE/App/usbd_cdc_if.c:299:10:CDC_Transmit_FS_Status	0	static
+../USB_DEVICE/App/usbd_cdc_if.c:305:9:CDC_Device_Is_Connected	0	static
