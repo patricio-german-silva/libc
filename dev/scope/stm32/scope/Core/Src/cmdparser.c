@@ -41,20 +41,63 @@ void cmd_init(_usrtick *ut, _hb *h, _pcomm *p, _control *c){
  */
 void cmd_exec(_pcomm *p){
 	switch(p->rx.buff[p->rx.datastart]){
-	// Firmware version
-	case _CMD_START_ADC_ON_CH1:{
-		pcomm_tx_put_cmd_frame(p, _CMD_START_ADC_ON_CH1, (uint8_t *)(&(control->bf_adc_ch1[control->bf_adc_ch1_ir])), 1);
-		control->bf_adc_ch1_iw = 0;
+	/*   ·······················   ADC   ······················· */
+	case _CMD_ADC_START_ON_CH1:{
+		control->control_status |= 0b1000000000000000;
+		pcomm_tx_put_data_frame(p, &p->rx.buff[p->rx.datastart], 1);
 		break;
 	}
-	case _CMD_START_ADC_ON_CH2:{
-		pcomm_tx_put_cmd_frame(p, _CMD_START_ADC_ON_CH2, (uint8_t *)(&(control->bf_adc_ch2[control->bf_adc_ch2_ir])), 1);
-		control->bf_adc_ch2_iw = 0;
+	case _CMD_ADC_START_ON_CH2:{
+		control->control_status |= 0b0100000000000000;
+		pcomm_tx_put_data_frame(p, &p->rx.buff[p->rx.datastart], 1);
 		break;
 	}
-	/*   ·····································································*/
-	/*   ·······················   REPORTES DE INFO   ······················· */
-	/*   ·····································································*/
+	case _CMD_ADC_STOP_ON_CH1:{
+		control->control_status &= 0b0111111111111111;
+		pcomm_tx_put_data_frame(p, &p->rx.buff[p->rx.datastart], 1);
+		break;
+	}
+	case _CMD_ADC_STOP_ON_CH2:{
+		control->control_status &= 0b1011111111111111;
+		pcomm_tx_put_data_frame(p, &p->rx.buff[p->rx.datastart], 1);
+		break;
+	}
+	case _CMD_ADC_SET_TIMER:{
+		if(p->rx.datasize == 5){
+			control->adc_prescaler = pcomm_rx_read_uint16_t(p, 1);
+			control->adc_autoreload = pcomm_rx_read_uint16_t(p, 3);
+			pcomm_tx_put_data_frame(p, &p->rx.buff[p->rx.datastart], 1);
+		}else{
+			pcomm_tx_put_data_frame(p, (uint8_t *)cmd_error, 3);
+		}
+		break;
+	}
+
+	/*   ·······················   PWM   ······················· */
+	/* Activar PWM:
+	 * [0]	: este codigo, _CMD_START_PWM_ON_CH1
+	 * [1,2]: prescaler
+	 * [3,4]: compare
+	 * [5,6]: autoreload
+	 */
+	case _CMD_PWM_START_ON_CH1:{
+		if(p->rx.datasize == 7){
+			control->control_status |= 0b0010000000000000;
+			control->pwm_prescaler = pcomm_rx_read_uint16_t(p, 1);
+			control->pwm_compare = pcomm_rx_read_uint16_t(p, 3);
+			control->pwm_autoreload = pcomm_rx_read_uint16_t(p, 5);
+			pcomm_tx_put_data_frame(p, &p->rx.buff[p->rx.datastart], 1);
+		}else{
+			pcomm_tx_put_data_frame(p, (uint8_t *)cmd_error, 3);
+		}
+		break;
+	}
+	case _CMD_PWM_STOP_ON_CH1:{
+		control->control_status &= 0b1101111111111111;
+		pcomm_tx_put_data_frame(p, &p->rx.buff[p->rx.datastart], 1);
+		break;
+	}
+	/*   ·······················   REPORTES e INFO   ······················· */
 	// Keep alive
 	case _CMD_KEEP_ALIVE:{
 		pcomm_tx_put_data_frame(p, &p->rx.buff[p->rx.datastart], 1);

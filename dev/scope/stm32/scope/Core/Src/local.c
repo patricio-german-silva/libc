@@ -16,13 +16,12 @@ void local_init_control(_control *c, uint16_t *ch1_bf, uint16_t ch1_bf_size, uin
 	c->bf_adc_ch1_ir = 0;
 	c->bf_adc_ch2_iw = 0;
 	c->bf_adc_ch2_ir = 0;
-	c->adc_sps = 0;
-	c->adc_trigger = 0;
-	c->adc_ch1_active = 0;
+	c->control_status = 0;
+	c->adc_prescaler = 0;
+	c->adc_autoreload = 0;
 	c->adc_ch1_trigger = 0;
-	c->adc_ch2_active = 0;
 	c->adc_ch2_trigger = 0;
-	c->pwm_active = 0;
-	c->pwm_period_high_ns = 0;
-	c->pwm_period_low_ns = 0;
+	c->pwm_prescaler = 0;
+	c->pwm_compare = 0;
+	c->pwm_autoreload = 0;
 }

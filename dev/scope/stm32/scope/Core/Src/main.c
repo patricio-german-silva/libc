@@ -152,15 +152,16 @@ void cdc_receive(uint8_t *Buf, uint32_t *Len){
 	pcomm_rx_receive_array(&cdc, Buf, *Len);
 }
 
-/* Setea el timer para la salida  PWM */
-void pwm_set_timer(uint16_t prescaler, uint16_t autoreload, uint16_t compare){
+/* Setea el timer para la salida  PWM con los valores de configuracion indicados */
+void pwm_set_timer_by_config(uint16_t prescaler, uint16_t compare, uint16_t autoreload){
 	__HAL_TIM_SET_PRESCALER(&htim4, prescaler);
 	__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_3, compare);
 	__HAL_TIM_SET_AUTORELOAD(&htim4, autoreload);
 }
 
+
 /* Setea el timer para el ADC */
-void adc_set_timer(uint16_t prescaler, uint16_t autoreload){
+void adc_set_timer_by_config(uint16_t prescaler, uint16_t autoreload){
 	__HAL_TIM_SET_PRESCALER(&htim3, prescaler);
 	__HAL_TIM_SET_AUTORELOAD(&htim3, autoreload);
 }
