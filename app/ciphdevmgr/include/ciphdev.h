@@ -16,7 +16,7 @@
  *
  * La clave de cifrado SPECK es creada durante la inicialización y se almacena
  * cifrada utilizando las claves de usuario y el numero de slot como vector de
- * ncializacion. Por defecto se cuenta con 10 slots para almacenar las claves
+ * incializacion. Por defecto se cuenta con 10 slots para almacenar las claves
  * cifradas.
  *
  * El bloque posee un cifrado dual por lo que se posee dos claves de cifrado
@@ -26,7 +26,7 @@
  * EL header de control ocupa el sector 0 de 512 bytes, cada slot con las Claves
  * cifradas se ubican consucutivamente, ocupando 32 bytes cada par de claves
  * osea [0..319].
- * La ubicacion [320..327] es el vector de incializacion en plano
+ * La ubicacion [320..327] es el vector de incializacion en claro
  * El resto del sector se cifra con la key 1, y el vector de inicializacion
  * Siendo:
  * La ubicación [328..331] es el tamaño del bloque en sectores
@@ -49,6 +49,11 @@
  *
  * Doc: https://eprint.iacr.org/2013/404.pdf
  * https://nsacyber.github.io/simon-speck/implementations/ImplementationGuide1.1.pdf
+ *
+ * TODO:
+ *		- Ver alternativas para almacenar tamaño del blouque en sectores y version
+ *		  Es una cadena conocida que permite romper el cifrado de la key 1
+ *		  Podria utilizarse un hash (md5((key_1 ^ key_2)?) para cifrar ese bloque
  *
  * @author Patricio Silva
  * @date Dec 21, 2023
