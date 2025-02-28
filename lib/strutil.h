@@ -21,6 +21,8 @@
  *								_strlen
  *								_cut
  *								_strcmp
+ *                              _touppercase
+ *                              _tolowercase
  */
 #ifndef INC_STRUTIL_H_
 #define INC_STRUTIL_H_
@@ -85,7 +87,7 @@ void _uint32_to_hex(const uint32_t *number, char *str);
  * copia el string src terminado en \0 en dst terminado en \0
  * @param max: maxima cantidad de caracteres que se van a escribir en dst (incluido el '\0')
  * @result retorna la cantidad de caracteres copiados, sin contar el \0
- * OJO al orden de los parametros: es src -> dst, alrevez del strcpy de C que es dst <- src
+ * OJO al orden de los parametros: es src -> dst, al reves del strcpy de C que es dst <- src
  * Para mi es mas natural asi, es como cp src dst
  * Además, max no le da el comportamiento de strncpy, no se hace padding
  */
