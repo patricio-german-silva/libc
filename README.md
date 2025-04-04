@@ -15,7 +15,7 @@ Fonts in C array format
 
 md5.h
 --
-md5 mplementation for 32 bits microprocesor
+md5 mplementation for 32 bits microprocessor
 
 
 pcomm.h
