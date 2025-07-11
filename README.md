@@ -1,5 +1,5 @@
 # libc
-Bare Metal C Libraries
+Bare Metal C Libraries (no abi)
 
 button.h
 --
@@ -54,8 +54,9 @@ string.h like implementation of some string functions
 util.h
 --
 utilities mostly usable in microcontrollers stm32f
-HEARTBEAT
-PROCESS SCHEDULER
-FLASH STORAGE
-AUTOMATIC FIRMWARE VERSION NUMBER UPDATE
+
+- HEARTBEAT
+- PROCESS SCHEDULER
+- FLASH STORAGE
+- AUTOMATIC FIRMWARE VERSION NUMBER UPDATE
 
